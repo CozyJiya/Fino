@@ -2045,7 +2045,7 @@ async function updatePassword() {
 ════════════════════════════════════════ */
 async function downloadReport() {
   toast('Generating PDF report...', 'success');
-
+  try {
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF('p', 'mm', 'a4');
   // jsPDF's built-in Helvetica doesn't support ₹ (U+20B9) — use Rs. instead
@@ -2261,14 +2261,14 @@ async function downloadReport() {
     recentExpenses.forEach((e, i) => {
       checkPageBreak(12);
       
-      const catName = e.categories?.name || getCatName(e.category_id) || '—';
+      const catName = e.categories?.name || getCatName(e.category_id) || 'N/A';
       const dateFormatted = formatDate(e.date);
       
       pdf.setFont('helvetica', 'bold');
       pdf.text(pdfFmt(e.amount), margin, yPos);
       
       pdf.setFont('helvetica', 'normal');
-      pdf.text(`${catName} • ${dateFormatted}`, margin + 35, yPos);
+      pdf.text(`${catName} - ${dateFormatted}`, margin + 35, yPos);
       
       if (e.description) {
         pdf.setFontSize(8);
@@ -2294,8 +2294,11 @@ async function downloadReport() {
   // Save PDF
   const fileName = `expense-report-${new Date().toISOString().slice(0, 10)}.pdf`;
   pdf.save(fileName);
-  
   toast('PDF report downloaded!');
+  } catch (err) {
+    console.error('PDF generation failed:', err);
+    toast('Failed to generate PDF: ' + err.message, 'error');
+  }
 }
 
 /* ════════════════════════════════════════
