@@ -93,7 +93,7 @@ async function showApp() {
   const email = currentUser?.email || '';
   $('avatar-btn').textContent = email.charAt(0).toUpperCase() || 'A';
   // apply saved pfp to avatar immediately
-  const savedPfp = localStorage.getItem('demo_pfp');
+  const savedPfp = localStorage.getItem(pfpKey());
   if (savedPfp) {
     $('avatar-btn').style.backgroundImage = `url(${savedPfp})`;
     $('avatar-btn').style.backgroundSize = 'cover';
@@ -1370,6 +1370,7 @@ function openSettingsTab(tab) {
    PROFILE PICTURE
 ════════════════════════════════════════ */
 let pendingPfpDataUrl = null; // holds new image before save
+function pfpKey() { return `pfp_${currentUser?.id || 'demo'}`; }
 
 function updatePfpDisplay(dataUrl) {
   const img = $('pfp-img');
@@ -1399,7 +1400,7 @@ function updatePfpInitials() {
   const letter = (firstName?.[0] || email[0] || '?').toUpperCase();
   $('pfp-initials').textContent = letter;
   // Only update avatar text if no pfp image
-  const stored = localStorage.getItem('demo_pfp') || (userProfile?.pfp_url);
+  const stored = localStorage.getItem(pfpKey()) || (userProfile?.pfp_url);
   if (!stored) $('avatar-btn').textContent = letter;
 }
 
@@ -1421,7 +1422,7 @@ function handlePfpUpload(event) {
 
 function savePfp() {
   if (!pendingPfpDataUrl) return;
-  localStorage.setItem('demo_pfp', pendingPfpDataUrl);
+  localStorage.setItem(pfpKey(), pendingPfpDataUrl);
   if (userProfile) userProfile.pfp_url = pendingPfpDataUrl;
   pendingPfpDataUrl = null;
   $('pfp-actions').style.display = 'none';
@@ -1430,7 +1431,7 @@ function savePfp() {
 
 function removePfp() {
   pendingPfpDataUrl = null;
-  localStorage.removeItem('demo_pfp');
+  localStorage.removeItem(pfpKey());
   if (userProfile) userProfile.pfp_url = null;
   updatePfpDisplay(null);
   $('pfp-actions').style.display = 'none';
@@ -1439,7 +1440,7 @@ function removePfp() {
 }
 
 function loadPfp() {
-  const stored = localStorage.getItem('demo_pfp') || userProfile?.pfp_url || null;
+  const stored = localStorage.getItem(pfpKey()) || userProfile?.pfp_url || null;
   updatePfpDisplay(stored);
 }
 
@@ -2528,6 +2529,7 @@ async function confirmDeleteAccount() {
   if (DEMO_MODE) {
     localStorage.removeItem('demo_expenses');
     localStorage.removeItem('demo_profile');
+    localStorage.removeItem(pfpKey());
     currentUser = null;
     allExpenses = [];
     closeDeleteAccountModal();
@@ -2552,8 +2554,10 @@ async function confirmDeleteAccount() {
   try {
     await db.from('expenses').delete().eq('user_id', currentUser.id);
     await db.from('profiles').delete().eq('id', currentUser.id);
-    try { await db.rpc('delete_user'); } catch (_) {}
-    await db.auth.signOut();
+    localStorage.removeItem(pfpKey());
+    const { error: rpcError } = await db.rpc('delete_user');
+    if (rpcError) throw rpcError;
+    await db.auth.signOut().catch(() => {});
     currentUser = null;
     allExpenses = [];
     closeDeleteAccountModal();
@@ -2562,7 +2566,8 @@ async function confirmDeleteAccount() {
   } catch (err) {
     btn.disabled = false;
     btn.textContent = 'Delete My Account';
-    toast('Failed to delete account', 'error');
+    toast('Failed to delete account — make sure the delete_user SQL function exists in Supabase', 'error');
+    console.error('Delete account error:', err);
   }
 }
 
