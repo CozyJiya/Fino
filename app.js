@@ -139,11 +139,20 @@ async function signIn() {
 
   // If not an email, look up the real email by username from profiles table
   if (!username.includes('@')) {
-    const { data: profileRow } = await db
+    const { data: profileRow, error: lookupError } = await db
       .from('profiles')
       .select('email')
       .eq('username', username)
       .maybeSingle();
+
+    console.log('Username lookup:', { username, profileRow, lookupError });
+
+    if (lookupError) {
+      // RLS is likely blocking the query - show a helpful message
+      btn.disabled = false; btn.textContent = 'Sign In';
+      toast('Login by username failed: database policy blocked the lookup. Please sign in with your email for now, or fix RLS in Supabase.', 'error');
+      return;
+    }
 
     if (!profileRow || !profileRow.email) {
       btn.disabled = false; btn.textContent = 'Sign In';
@@ -159,6 +168,17 @@ async function signIn() {
   if (error) { toast(error.message, 'error'); return; }
   const { data: { session } } = await db.auth.getSession();
   currentUser = session.user;
+
+  // Always ensure profiles row has username + email (handles first login after signup)
+  const metaUsername = currentUser.user_metadata?.username || '';
+  if (metaUsername) {
+    await db.from('profiles').upsert({
+      id: currentUser.id,
+      username: metaUsername,
+      email: currentUser.email
+    }, { onConflict: 'id', ignoreDuplicates: false });
+  }
+
   showApp();
 }
 
@@ -183,7 +203,7 @@ async function signUp() {
 
   // REAL MODE - Use Supabase
 
-  // 1. Enforce username uniqueness before creating the account
+  // 1. Check username uniqueness against profiles table
   const { data: existingUser } = await db
     .from('profiles')
     .select('id')
@@ -196,23 +216,15 @@ async function signUp() {
     return;
   }
 
-  // 2. Create the auth account, storing username in metadata
-  const { data: signUpData, error } = await db.auth.signUp({
+  // 2. Create the auth account — store username + email in metadata
+  //    (profiles row is written on first login, after email confirmation)
+  const { error } = await db.auth.signUp({
     email,
     password,
-    options: { data: { username } }
+    options: { data: { username, email } }
   });
   btn.disabled = false; btn.textContent = 'Create Account';
   if (error) { toast(error.message, 'error'); return; }
-
-  // 3. Write username + email into profiles so login-by-username works
-  if (signUpData?.user) {
-    await db.from('profiles').upsert({
-      id: signUpData.user.id,
-      username,
-      email
-    }, { onConflict: 'id' });
-  }
 
   toast('Account created! Please sign in.');
   showLogin();
