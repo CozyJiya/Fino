@@ -92,8 +92,8 @@ async function showApp() {
   // set avatar initials (will be overridden by pfp if saved)
   const email = currentUser?.email || '';
   $('avatar-btn').textContent = email.charAt(0).toUpperCase() || 'A';
-  // apply saved pfp to avatar immediately
-  const savedPfp = localStorage.getItem(pfpKey());
+  // apply saved pfp to avatar immediately (scoped to this user)
+  const savedPfp = localStorage.getItem(`pfp_${currentUser.id}`);
   if (savedPfp) {
     $('avatar-btn').style.backgroundImage = `url(${savedPfp})`;
     $('avatar-btn').style.backgroundSize = 'cover';
@@ -176,7 +176,7 @@ async function signOut() {
   if (DEMO_MODE) {
     currentUser = null;
     allExpenses = [];
-    localStorage.removeItem('demo_expenses');
+    localStorage.removeItem(`exp_${currentUser?.id}`);
     showLogin();
     return;
   }
@@ -226,7 +226,7 @@ async function checkAndAddMonthlyIncome() {
         categories: { name: 'Earning' }
       };
       allExpenses.unshift(newIncome);
-      localStorage.setItem('demo_expenses', JSON.stringify(allExpenses));
+      localStorage.setItem(`exp_${currentUser?.id}`, JSON.stringify(allExpenses));
       console.log('✅ Monthly income auto-added:', income);
     }
     return;
@@ -344,7 +344,7 @@ async function loadExpenses() {
   
   if (DEMO_MODE) {
     // Load from localStorage
-    const stored = localStorage.getItem('demo_expenses');
+    const stored = localStorage.getItem(`exp_${currentUser?.id}`);
     allExpenses = stored ? JSON.parse(stored) : [];
     renderExpenseList();
     return;
@@ -484,7 +484,7 @@ async function addExpense() {
           description: desc || null,
           categories: { name: getCatName(selectedCat) }
         };
-        localStorage.setItem('demo_expenses', JSON.stringify(allExpenses));
+        localStorage.setItem(`exp_${currentUser?.id}`, JSON.stringify(allExpenses));
         toast('Expense updated!');
       }
     } else {
@@ -500,7 +500,7 @@ async function addExpense() {
         categories: { name: getCatName(selectedCat) }
       };
       allExpenses.unshift(newExpense);
-      localStorage.setItem('demo_expenses', JSON.stringify(allExpenses));
+      localStorage.setItem(`exp_${currentUser?.id}`, JSON.stringify(allExpenses));
       toast('Expense added!');
     }
     
@@ -595,7 +595,7 @@ async function confirmDelete() {
   
   if (DEMO_MODE) {
     allExpenses = allExpenses.filter(e => e.id !== id);
-    localStorage.setItem('demo_expenses', JSON.stringify(allExpenses));
+    localStorage.setItem(`exp_${currentUser?.id}`, JSON.stringify(allExpenses));
     toast('Expense deleted');
     renderExpenseList();
     updateStats();
@@ -1370,7 +1370,6 @@ function openSettingsTab(tab) {
    PROFILE PICTURE
 ════════════════════════════════════════ */
 let pendingPfpDataUrl = null; // holds new image before save
-function pfpKey() { return `pfp_${currentUser?.id || 'demo'}`; }
 
 function updatePfpDisplay(dataUrl) {
   const img = $('pfp-img');
@@ -1400,7 +1399,7 @@ function updatePfpInitials() {
   const letter = (firstName?.[0] || email[0] || '?').toUpperCase();
   $('pfp-initials').textContent = letter;
   // Only update avatar text if no pfp image
-  const stored = localStorage.getItem(pfpKey()) || (userProfile?.pfp_url);
+  const stored = localStorage.getItem(`pfp_${currentUser?.id}`) || (userProfile?.pfp_url);
   if (!stored) $('avatar-btn').textContent = letter;
 }
 
@@ -1422,7 +1421,8 @@ function handlePfpUpload(event) {
 
 function savePfp() {
   if (!pendingPfpDataUrl) return;
-  localStorage.setItem(pfpKey(), pendingPfpDataUrl);
+  const key = `pfp_${currentUser?.id}`;
+  localStorage.setItem(key, pendingPfpDataUrl);
   if (userProfile) userProfile.pfp_url = pendingPfpDataUrl;
   pendingPfpDataUrl = null;
   $('pfp-actions').style.display = 'none';
@@ -1431,7 +1431,7 @@ function savePfp() {
 
 function removePfp() {
   pendingPfpDataUrl = null;
-  localStorage.removeItem(pfpKey());
+  localStorage.removeItem(`pfp_${currentUser?.id}`);
   if (userProfile) userProfile.pfp_url = null;
   updatePfpDisplay(null);
   $('pfp-actions').style.display = 'none';
@@ -1440,7 +1440,7 @@ function removePfp() {
 }
 
 function loadPfp() {
-  const stored = localStorage.getItem(pfpKey()) || userProfile?.pfp_url || null;
+  const stored = localStorage.getItem(`pfp_${currentUser?.id}`) || userProfile?.pfp_url || null;
   updatePfpDisplay(stored);
 }
 
@@ -1449,7 +1449,7 @@ async function loadProfile() {
   
   if (DEMO_MODE) {
     // Load from localStorage
-    const stored = localStorage.getItem('demo_profile');
+    const stored = localStorage.getItem(`profile_${currentUser?.id}`);
     if (stored) {
       const data = JSON.parse(stored);
       userProfile = data;
@@ -1550,7 +1550,7 @@ async function saveProfile() {
   };
   
   if (DEMO_MODE) {
-    localStorage.setItem('demo_profile', JSON.stringify(payload));
+    localStorage.setItem(`profile_${currentUser?.id}`, JSON.stringify(payload));
     userProfile = payload;
     userIncome = income;
     toast('Profile saved!');
@@ -1709,7 +1709,7 @@ async function updateUsername(newUsername) {
   userProfile.username = newUsername;
   
   if (DEMO_MODE) {
-    localStorage.setItem('demo_profile', JSON.stringify(userProfile));
+    localStorage.setItem(`profile_${currentUser?.id}`, JSON.stringify(userProfile));
     $('a-username').value = newUsername;
     toast('Username updated successfully!');
     return;
@@ -1811,7 +1811,7 @@ async function updatePhoneNumber(phoneNumber) {
   userProfile.phone_verified = true;
   
   if (DEMO_MODE) {
-    localStorage.setItem('demo_profile', JSON.stringify(userProfile));
+    localStorage.setItem(`profile_${currentUser?.id}`, JSON.stringify(userProfile));
     $('a-phone').value = phoneNumber;
     updatePhoneVerificationStatus(true);
     toast('Phone number verified successfully!');
@@ -1944,422 +1944,258 @@ async function updatePassword() {
 }
 
 /* ════════════════════════════════════════
-   DOWNLOAD REPORT (PDF) — Aesthetic Version
+   DOWNLOAD REPORT (PDF)
 ════════════════════════════════════════ */
 async function downloadReport() {
   toast('Generating PDF report...', 'success');
-
+  
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF('p', 'mm', 'a4');
-
-  const pageWidth  = pdf.internal.pageSize.getWidth();
+  
+  const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
-  const margin = 14;
-  const contentW = pageWidth - 2 * margin;
-  let yPos = 0;
-
-  // ── Palette ──────────────────────────────────────────────
-  const C = {
-    navy:       [13,  31,  60],
-    navyMid:    [21,  40,  73],
-    accent:     [78,  122, 177],
-    accentLight:[108, 152, 207],
-    purple:     [169, 141, 192],
-    purpleLight:[206, 181, 212],
-    green:      [52,  211, 153],
-    red:        [239, 68,  68],
-    white:      [255, 255, 255],
-    offWhite:   [245, 247, 252],
-    muted:      [110, 130, 160],
-    border:     [220, 228, 240],
-    text:       [30,  45,  70],
-    textLight:  [80,  100, 130],
-  };
-
-  // ── Helpers ───────────────────────────────────────────────
-  const setFill  = (c) => pdf.setFillColor(...c);
-  const setStroke= (c) => pdf.setDrawColor(...c);
-  const setTxt   = (c) => pdf.setTextColor(...c);
-  const setFont  = (style, size) => { pdf.setFont('helvetica', style); pdf.setFontSize(size); };
-
-  const roundedRect = (x, y, w, h, r, mode) => {
-    pdf.roundedRect(x, y, w, h, r, r, mode);
-  };
-
-  const checkPageBreak = (need) => {
-    if (yPos + need > pageHeight - 18) {
-      // footer on current page
-      drawFooter();
+  const margin = 15;
+  let yPos = margin;
+  
+  // Helper function to add new page if needed
+  const checkPageBreak = (requiredSpace) => {
+    if (yPos + requiredSpace > pageHeight - margin) {
       pdf.addPage();
-      drawPageHeader();
-      yPos = 42;
+      yPos = margin;
       return true;
     }
     return false;
   };
-
-  const drawHRule = (y, alpha = 0.15) => {
-    pdf.setDrawColor(100, 130, 180);
-    pdf.setLineWidth(0.3);
-    pdf.setGState(new pdf.GState({ opacity: alpha }));
-    pdf.line(margin, y, pageWidth - margin, y);
-    pdf.setGState(new pdf.GState({ opacity: 1 }));
-  };
-
-  // ── Section header ────────────────────────────────────────
-  const sectionHeader = (label, icon = '') => {
-    checkPageBreak(16);
-    setFill(C.accent);
-    pdf.rect(margin, yPos, 3, 10, 'F');
-    setFont('bold', 12);
-    setTxt(C.text);
-    pdf.text(`${icon}${label}`, margin + 6, yPos + 7);
-    yPos += 15;
-  };
-
-  // ── Pill / badge ──────────────────────────────────────────
-  const badge = (text, x, y, bgColor, textColor) => {
-    setFont('bold', 7.5);
-    const tw = pdf.getTextWidth(text);
-    const pw = tw + 6, ph = 5.5, pr = 2;
-    setFill(bgColor);
-    pdf.roundedRect(x, y - 4, pw, ph, pr, pr, 'F');
-    setTxt(textColor);
-    pdf.text(text, x + 3, y);
-  };
-
-  // ── Compute data ──────────────────────────────────────────
-  const now   = new Date();
-  const moKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-
-  let totalIncome = 0, totalSpend = 0;
-  allExpenses.forEach(e => {
-    const cat = allCategories.find(c => c.id === e.category_id);
-    const amt = parseFloat(e.amount);
-    if (cat?.type === 'received') totalIncome += amt;
-    else totalSpend += amt;
+  
+  // Header
+  pdf.setFillColor(13, 31, 60);
+  pdf.rect(0, 0, pageWidth, 40, 'F');
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFontSize(24);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Expense Tracker Report', margin, 20);
+  
+  pdf.setFontSize(10);
+  pdf.setFont('helvetica', 'normal');
+  const reportDate = new Date().toLocaleDateString('en-IN', { 
+    year: 'numeric', month: 'long', day: 'numeric' 
   });
-  const netBalance = totalIncome - totalSpend;
-
-  const moExp = allExpenses.filter(e => e.date.startsWith(moKey));
-  let moIncome = 0, moSpend = 0;
+  pdf.text(`Generated on: ${reportDate}`, margin, 30);
+  
+  yPos = 50;
+  
+  // User Info
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFontSize(12);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('User Information', margin, yPos);
+  yPos += 8;
+  
+  pdf.setFontSize(10);
+  pdf.setFont('helvetica', 'normal');
+  if (userProfile) {
+    const fullName = [userProfile.first_name, userProfile.middle_name, userProfile.surname]
+      .filter(Boolean).join(' ');
+    pdf.text(`Name: ${fullName || 'N/A'}`, margin, yPos);
+    yPos += 6;
+    pdf.text(`Email: ${currentUser?.email || 'N/A'}`, margin, yPos);
+    yPos += 6;
+    pdf.text(`Monthly Income: ${fmt(userIncome)}`, margin, yPos);
+    yPos += 10;
+  }
+  
+  // Summary Statistics
+  checkPageBreak(40);
+  pdf.setFontSize(14);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Summary Statistics', margin, yPos);
+  yPos += 8;
+  
+  const total = allExpenses.reduce((s, e) => s + parseFloat(e.amount), 0);
+  const now = new Date();
+  const mo = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const moExp = allExpenses.filter(e => e.date.startsWith(mo));
+  const moTotal = moExp.reduce((s, e) => s + parseFloat(e.amount), 0);
+  const days = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  const daily = days ? moTotal / days : 0;
+  
+  pdf.setFillColor(240, 240, 245);
+  pdf.rect(margin, yPos, pageWidth - 2*margin, 30, 'F');
+  
+  pdf.setFontSize(10);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(`Total Expenses: ${fmt(total)}`, margin + 5, yPos + 8);
+  pdf.text(`Monthly Spend: ${fmt(moTotal)}`, margin + 5, yPos + 16);
+  pdf.text(`Daily Average: ${fmt(daily)}`, margin + 5, yPos + 24);
+  yPos += 40;
+  
+  // Category Breakdown
+  checkPageBreak(60);
+  pdf.setFontSize(14);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Category Breakdown (This Month)', margin, yPos);
+  yPos += 8;
+  
+  const byCat = {};
   moExp.forEach(e => {
-    const cat = allCategories.find(c => c.id === e.category_id);
-    const amt = parseFloat(e.amount);
-    if (cat?.type === 'received') moIncome += amt;
-    else moSpend += amt;
+    const name = e.categories?.name || getCatName(e.category_id) || 'Other';
+    byCat[name] = (byCat[name] || 0) + parseFloat(e.amount);
   });
-  const moNet   = moIncome - moSpend;
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
-  const dailyAvg    = daysInMonth ? moSpend / daysInMonth : 0;
-  const savingsPct  = moIncome > 0 ? Math.max(0, (moNet / moIncome) * 100) : 0;
-
-  // Monthly table data
+  
+  const categories = Object.keys(byCat);
+  if (categories.length > 0) {
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    
+    categories.forEach((cat, i) => {
+      checkPageBreak(8);
+      const amount = byCat[cat];
+      const percentage = moTotal > 0 ? ((amount / moTotal) * 100).toFixed(1) : 0;
+      
+      // Category bar
+      const barWidth = (amount / moTotal) * (pageWidth - 2*margin - 60);
+      pdf.setFillColor(206, 181, 212);
+      pdf.rect(margin, yPos - 4, barWidth, 6, 'F');
+      
+      pdf.text(cat, margin, yPos);
+      pdf.text(`${fmt(amount)} (${percentage}%)`, pageWidth - margin - 50, yPos, { align: 'right' });
+      yPos += 8;
+    });
+  } else {
+    pdf.setFontSize(10);
+    pdf.text('No expenses for this month', margin, yPos);
+    yPos += 8;
+  }
+  yPos += 5;
+  
+  // Monthly Summary Table
+  checkPageBreak(80);
+  pdf.setFontSize(14);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Monthly Summary', margin, yPos);
+  yPos += 10;
+  
   const monthly = {};
   allExpenses.forEach(e => {
     const m = e.date.slice(0, 7);
-    if (!monthly[m]) monthly[m] = { received: 0, spent: 0 };
+    if (!monthly[m]) monthly[m] = { received: 0, spent: 0, count: 0 };
     const cat = allCategories.find(c => c.id === e.category_id);
-    const amt = parseFloat(e.amount);
-    if (cat?.type === 'received') monthly[m].received += amt;
-    else monthly[m].spent += amt;
+    const isReceived = cat ? cat.type === 'received' : false;
+    const amount = parseFloat(e.amount);
+    if (isReceived) monthly[m].received += amount;
+    else monthly[m].spent += amount;
+    monthly[m].count++;
   });
-  const monthKeys = Object.keys(monthly).sort().reverse().slice(0, 12);
-
-  // Category breakdown
-  const byCat = {};
-  moExp.forEach(e => {
-    const cat = allCategories.find(c => c.id === e.category_id);
-    const isReceived = cat?.type === 'received';
-    if (!isReceived) {
-      const name = e.categories?.name || getCatName(e.category_id) || 'Other';
-      byCat[name] = (byCat[name] || 0) + parseFloat(e.amount);
-    }
-  });
-  const catEntries = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
-
-  // ── Page stripe header (repeating) ───────────────────────
-  const drawPageHeader = () => {
-    // Deep navy header bar
-    setFill(C.navy);
-    pdf.rect(0, 0, pageWidth, 30, 'F');
-    // Accent stripe
-    setFill(C.accent);
-    pdf.rect(0, 28, pageWidth, 2, 'F');
-    // Decorative circle
-    setFill(C.navyMid);
-    pdf.circle(pageWidth - 14, 14, 20, 'F');
-    setFill(C.accent);
-    pdf.circle(pageWidth - 14, 14, 12, 'F');
-    // Title
-    setFont('bold', 16);
-    setTxt(C.white);
-    pdf.text('Expense Tracker', margin, 18);
-    // Sub-title (right)
-    setFont('normal', 8);
-    setTxt(C.accentLight);
-    const reportDate = now.toLocaleDateString('en-IN', { year:'numeric', month:'long', day:'numeric' });
-    pdf.text(`Report · ${reportDate}`, pageWidth - margin, 18, { align: 'right' });
-  };
-
-  const drawFooter = () => {
-    const fy = pageHeight - 10;
-    setFill(C.navy);
-    pdf.rect(0, pageHeight - 14, pageWidth, 14, 'F');
-    setFont('normal', 7.5);
-    setTxt(C.accentLight);
-    pdf.text('Expense Tracker  ·  Confidential Financial Report', margin, fy);
-    setTxt(C.muted);
-    pdf.text(`Page ${pdf.internal.getCurrentPageInfo().pageNumber}`, pageWidth - margin, fy, { align: 'right' });
-  };
-
-  // ════════════ PAGE 1 ════════════
-  drawPageHeader();
-  yPos = 38;
-
-  // ── User info card ───────────────────────────────────────
-  const fullName = userProfile
-    ? [userProfile.first_name, userProfile.middle_name, userProfile.surname].filter(Boolean).join(' ')
-    : '';
-
-  setFill(C.offWhite);
-  setStroke(C.border);
-  pdf.setLineWidth(0.4);
-  roundedRect(margin, yPos, contentW, 22, 3, 'FD');
-
-  setFont('bold', 11);
-  setTxt(C.text);
-  pdf.text(fullName || currentUser?.email || 'User', margin + 6, yPos + 8);
-
-  setFont('normal', 8.5);
-  setTxt(C.textLight);
-  const infoItems = [
-    currentUser?.email || '',
-    `Monthly Income: ${fmt(userIncome)}`,
-    `Report Period: ${now.toLocaleDateString('en-IN',{month:'long',year:'numeric'})}`,
-  ].filter(Boolean);
-  pdf.text(infoItems.join('   ·   '), margin + 6, yPos + 15);
-  yPos += 30;
-
-  // ── KPI cards (4 in a row) ───────────────────────────────
-  const kpiData = [
-    { label: 'Net Balance',   value: fmt(netBalance),  color: netBalance >= 0 ? C.green : C.red,  bg: netBalance >= 0 ? [235,255,247] : [255,238,238] },
-    { label: 'Month Income',  value: fmt(moIncome),    color: C.accent,  bg: [232,241,255] },
-    { label: 'Month Spend',   value: fmt(moSpend),     color: C.red,     bg: [255,238,238] },
-    { label: 'Savings Rate',  value: savingsPct.toFixed(1) + '%', color: C.purple, bg: [245,240,255] },
-  ];
-  const kpiW = (contentW - 9) / 4;
-  kpiData.forEach((k, i) => {
-    const kx = margin + i * (kpiW + 3);
-    const ky = yPos;
-    setFill(k.bg);
-    setStroke(C.border);
-    pdf.setLineWidth(0.3);
-    roundedRect(kx, ky, kpiW, 24, 3, 'FD');
-
-    // Colored top strip
-    setFill(k.color);
-    pdf.roundedRect(kx, ky, kpiW, 2.5, 1, 1, 'F');
-
-    setFont('normal', 7);
-    setTxt(C.textLight);
-    pdf.text(k.label.toUpperCase(), kx + 4, ky + 9);
-
-    setFont('bold', 10);
-    setTxt(k.color);
-    pdf.text(k.value, kx + 4, ky + 18);
-  });
-  yPos += 32;
-
-  // ── Daily Average sub-stat ───────────────────────────────
-  setFill(C.navyMid);
-  roundedRect(margin, yPos, contentW, 10, 2, 'F');
-  setFont('normal', 8);
-  setTxt(C.accentLight);
-  pdf.text(`Daily Average Spend (this month):`, margin + 5, yPos + 6.5);
-  setFont('bold', 8);
-  setTxt(C.white);
-  pdf.text(fmt(dailyAvg), margin + 80, yPos + 6.5);
-
-  setFont('normal', 8);
-  setTxt(C.accentLight);
-  pdf.text(`Total Transactions:`, margin + 110, yPos + 6.5);
-  setFont('bold', 8);
-  setTxt(C.white);
-  pdf.text(String(allExpenses.length), margin + 145, yPos + 6.5);
-  yPos += 18;
-
-  // ── Category Breakdown ───────────────────────────────────
-  sectionHeader('Category Breakdown  (This Month — Spend Only)');
-
-  if (catEntries.length === 0) {
-    setFont('normal', 9); setTxt(C.muted);
-    pdf.text('No spend transactions this month.', margin, yPos);
-    yPos += 12;
-  } else {
-    const maxAmt = catEntries[0][1];
-    const barTrackW = contentW - 60;
-
-    catEntries.forEach(([cat, amt], i) => {
-      checkPageBreak(12);
-      const pct = moSpend > 0 ? (amt / moSpend * 100) : 0;
-      const barW = barTrackW * (amt / maxAmt);
-
-      // Alternating row bg
-      if (i % 2 === 0) {
-        setFill(C.offWhite);
-        pdf.rect(margin, yPos - 5, contentW, 10, 'F');
-      }
-
-      // Bar track
-      setFill(C.border);
-      pdf.roundedRect(margin + 42, yPos - 2.5, barTrackW, 5, 2, 2, 'F');
-
-      // Bar fill — gradient-like via two rects
-      const barColor = PALETTE[i % PALETTE.length];
-      const bc = barColor.replace('#','');
-      const r = parseInt(bc.slice(0,2),16), g = parseInt(bc.slice(2,4),16), b = parseInt(bc.slice(4,6),16);
-      pdf.setFillColor(r, g, b);
-      pdf.roundedRect(margin + 42, yPos - 2.5, Math.max(barW, 2), 5, 2, 2, 'F');
-
-      // Labels
-      setFont('normal', 8);
-      setTxt(C.text);
-      pdf.text(cat, margin + 1, yPos + 1);
-
-      setFont('bold', 8);
-      setTxt([r,g,b]);
-      pdf.text(fmt(amt), pageWidth - margin - 30, yPos + 1, { align: 'right' });
-
-      setFont('normal', 7.5);
-      setTxt(C.muted);
-      pdf.text(`${pct.toFixed(1)}%`, pageWidth - margin, yPos + 1, { align: 'right' });
-
-      yPos += 10;
-    });
-  }
-  yPos += 4;
-
-  // ── Monthly Summary Table ────────────────────────────────
-  checkPageBreak(50);
-  sectionHeader('Monthly Summary');
-
-  if (monthKeys.length === 0) {
-    setFont('normal', 9); setTxt(C.muted);
-    pdf.text('No data available.', margin, yPos);
-    yPos += 10;
-  } else {
+  
+  const months = Object.keys(monthly).sort().reverse().slice(0, 12); // Last 12 months
+  
+  if (months.length > 0) {
     // Table header
-    const cols = [38, 38, 38, 38, 28];
-    const colX = [margin];
-    cols.forEach((w, i) => colX.push(colX[i] + w));
-    const colLabels = ['Month', 'Income', 'Spent', 'Net', 'Savings%'];
-    const rowH = 8;
-
-    setFill(C.navy);
-    pdf.rect(margin, yPos, contentW, rowH, 'F');
-    setFont('bold', 8);
-    setTxt(C.white);
-    colLabels.forEach((lbl, i) => pdf.text(lbl, colX[i] + 2, yPos + 5.5));
-    yPos += rowH;
-
-    monthKeys.forEach((m, i) => {
-      checkPageBreak(rowH + 2);
+    pdf.setFillColor(45, 90, 123);
+    pdf.setTextColor(255, 255, 255);
+    pdf.rect(margin, yPos, pageWidth - 2*margin, 8, 'F');
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'bold');
+    
+    const colWidth = (pageWidth - 2*margin) / 5;
+    pdf.text('Month', margin + 2, yPos + 5);
+    pdf.text('Received', margin + colWidth + 2, yPos + 5);
+    pdf.text('Spent', margin + 2*colWidth + 2, yPos + 5);
+    pdf.text('Net Balance', margin + 3*colWidth + 2, yPos + 5);
+    pdf.text('Savings %', margin + 4*colWidth + 2, yPos + 5);
+    yPos += 8;
+    
+    // Table rows
+    pdf.setTextColor(0, 0, 0);
+    pdf.setFont('helvetica', 'normal');
+    
+    months.forEach((m, i) => {
+      checkPageBreak(8);
+      
       const { received, spent } = monthly[m];
       const net = received - spent;
-      const sv  = received > 0 ? ((net / received) * 100).toFixed(1) + '%' : '—';
-      const label = new Date(m + '-02').toLocaleDateString('en-IN', { month:'short', year:'numeric' });
-
-      if (i % 2 === 0) { setFill(C.offWhite); pdf.rect(margin, yPos, contentW, rowH, 'F'); }
-
-      // Subtle left accent for current month
-      if (m === moKey) {
-        setFill(C.accent);
-        pdf.rect(margin, yPos, 2, rowH, 'F');
+      const sr = received > 0 ? ((net / received) * 100).toFixed(1) + '%' : 'N/A';
+      const label = new Date(m + '-01').toLocaleDateString('en-IN', { 
+        month: 'short', year: 'numeric' 
+      });
+      
+      // Alternate row colors
+      if (i % 2 === 0) {
+        pdf.setFillColor(245, 245, 250);
+        pdf.rect(margin, yPos - 5, pageWidth - 2*margin, 7, 'F');
       }
-
-      setFont(m === moKey ? 'bold' : 'normal', 8);
-      setTxt(C.text);
-      pdf.text(label, colX[0] + 3, yPos + 5.5);
-
-      setTxt(C.green);
-      pdf.text(fmt(received), colX[1] + 2, yPos + 5.5);
-
-      setTxt(C.red);
-      pdf.text(fmt(spent), colX[2] + 2, yPos + 5.5);
-
-      setTxt(net >= 0 ? C.green : C.red);
-      pdf.text(fmt(net), colX[3] + 2, yPos + 5.5);
-
-      setTxt(C.textLight);
-      pdf.text(sv, colX[4] + 2, yPos + 5.5);
-
-      // Bottom divider
-      drawHRule(yPos + rowH, 0.08);
-      yPos += rowH;
+      
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(label, margin + 2, yPos);
+      pdf.setTextColor(52, 211, 153);
+      pdf.text(fmt(received), margin + colWidth + 2, yPos);
+      pdf.setTextColor(239, 68, 68);
+      pdf.text(fmt(spent), margin + 2*colWidth + 2, yPos);
+      
+      // Color code net balance
+      pdf.setTextColor(net >= 0 ? 52 : 239, net >= 0 ? 211 : 68, net >= 0 ? 153 : 68);
+      pdf.text(fmt(net), margin + 3*colWidth + 2, yPos);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(sr, margin + 4*colWidth + 2, yPos);
+      
+      yPos += 7;
     });
-  }
-  yPos += 8;
-
-  // ── Recent Transactions ──────────────────────────────────
-  checkPageBreak(50);
-  sectionHeader('Recent Transactions  (Last 15)');
-
-  const recentExp = allExpenses.slice(0, 15);
-  if (recentExp.length === 0) {
-    setFont('normal', 9); setTxt(C.muted);
-    pdf.text('No transactions yet.', margin, yPos);
   } else {
-    // Header row
-    setFill(C.navyMid);
-    pdf.rect(margin, yPos, contentW, 7.5, 'F');
-    setFont('bold', 7.5); setTxt(C.accentLight);
-    pdf.text('Date',        margin + 2,  yPos + 5);
-    pdf.text('Category',    margin + 28, yPos + 5);
-    pdf.text('Description', margin + 68, yPos + 5);
-    pdf.text('Amount',      pageWidth - margin - 2, yPos + 5, { align: 'right' });
-    yPos += 7.5;
-
-    recentExp.forEach((e, i) => {
-      checkPageBreak(9);
-      const cat    = allCategories.find(c => c.id === e.category_id);
-      const catName= e.categories?.name || getCatName(e.category_id) || '—';
-      const isRec  = cat?.type === 'received';
-      const rowH   = 8.5;
-
-      if (i % 2 === 0) { setFill(C.offWhite); pdf.rect(margin, yPos, contentW, rowH, 'F'); }
-
-      // Type indicator strip
-      setFill(isRec ? C.green : C.red);
-      pdf.rect(margin, yPos, 1.5, rowH, 'F');
-
-      setFont('normal', 7.5); setTxt(C.textLight);
-      pdf.text(formatDate(e.date), margin + 3, yPos + 5.5);
-
-      // Category badge
-      const bColor = isRec ? [220,255,240] : [240,232,255];
-      const tColor = isRec ? C.green : C.purple;
-      badge(catName.substring(0, 14), margin + 27, yPos + 5.5, bColor, tColor);
-
-      const desc = (e.description || '—').substring(0, 32);
-      setFont('normal', 7.5); setTxt(C.text);
-      pdf.text(desc, margin + 67, yPos + 5.5);
-
-      setFont('bold', 8);
-      setTxt(isRec ? C.green : C.red);
-      const amtLabel = (isRec ? '+' : '-') + fmt(e.amount);
-      pdf.text(amtLabel, pageWidth - margin - 2, yPos + 5.5, { align: 'right' });
-
-      yPos += rowH;
-    });
+    pdf.setFontSize(10);
+    pdf.text('No expense data available', margin, yPos);
   }
-
-  // ── Footer on last page ──────────────────────────────────
-  drawFooter();
-
-  // ── Save ─────────────────────────────────────────────────
-  const fileName = `expense-report-${now.toISOString().slice(0,10)}.pdf`;
+  
+  yPos += 10;
+  
+  // Recent Transactions
+  checkPageBreak(60);
+  pdf.setFontSize(14);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Recent Transactions (Last 10)', margin, yPos);
+  yPos += 10;
+  
+  const recentExpenses = allExpenses.slice(0, 10);
+  
+  if (recentExpenses.length > 0) {
+    pdf.setFontSize(9);
+    
+    recentExpenses.forEach((e, i) => {
+      checkPageBreak(12);
+      
+      const catName = e.categories?.name || getCatName(e.category_id) || '—';
+      const dateFormatted = formatDate(e.date);
+      
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(fmt(e.amount), margin, yPos);
+      
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`${catName} • ${dateFormatted}`, margin + 35, yPos);
+      
+      if (e.description) {
+        pdf.setFontSize(8);
+        pdf.setTextColor(100, 100, 100);
+        pdf.text(e.description.substring(0, 60), margin + 5, yPos + 4);
+        pdf.setTextColor(0, 0, 0);
+        pdf.setFontSize(9);
+        yPos += 4;
+      }
+      
+      yPos += 8;
+    });
+  } else {
+    pdf.setFontSize(10);
+    pdf.text('No transactions yet', margin, yPos);
+  }
+  
+  // Footer on last page
+  pdf.setFontSize(8);
+  pdf.setTextColor(150, 150, 150);
+  pdf.text('Generated by Expense Tracker', pageWidth / 2, pageHeight - 10, { align: 'center' });
+  
+  // Save PDF
+  const fileName = `expense-report-${new Date().toISOString().slice(0, 10)}.pdf`;
   pdf.save(fileName);
+  
   toast('PDF report downloaded!');
 }
 
@@ -2527,9 +2363,9 @@ async function confirmDeleteAccount() {
   btn.textContent = 'Deleting…';
 
   if (DEMO_MODE) {
-    localStorage.removeItem('demo_expenses');
-    localStorage.removeItem('demo_profile');
-    localStorage.removeItem(pfpKey());
+    localStorage.removeItem(`exp_${currentUser?.id}`);
+    localStorage.removeItem(`profile_${currentUser?.id}`);
+    localStorage.removeItem(`pfp_${currentUser?.id}`);
     currentUser = null;
     allExpenses = [];
     closeDeleteAccountModal();
@@ -2554,10 +2390,8 @@ async function confirmDeleteAccount() {
   try {
     await db.from('expenses').delete().eq('user_id', currentUser.id);
     await db.from('profiles').delete().eq('id', currentUser.id);
-    localStorage.removeItem(pfpKey());
-    const { error: rpcError } = await db.rpc('delete_user');
-    if (rpcError) throw rpcError;
-    await db.auth.signOut().catch(() => {});
+    try { await db.rpc('delete_user'); } catch (_) {}
+    await db.auth.signOut();
     currentUser = null;
     allExpenses = [];
     closeDeleteAccountModal();
@@ -2566,8 +2400,7 @@ async function confirmDeleteAccount() {
   } catch (err) {
     btn.disabled = false;
     btn.textContent = 'Delete My Account';
-    toast('Failed to delete account — make sure the delete_user SQL function exists in Supabase', 'error');
-    console.error('Delete account error:', err);
+    toast('Failed to delete account', 'error');
   }
 }
 
