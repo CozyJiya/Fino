@@ -1,0 +1,11 @@
+# If you want to keep your Supabase keys private,
+# uncomment the line below and use config.example.js instead.
+# config.js
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
