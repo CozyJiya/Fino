@@ -1509,6 +1509,8 @@ function removePfp() {
 function loadPfp() {
   const stored = localStorage.getItem(`pfp_${currentUser?.id}`) || userProfile?.pfp_url || null;
   updatePfpDisplay(stored);
+  // Hide save/remove buttons unless there's an unsaved photo pending
+  if (!pendingPfpDataUrl) $('pfp-actions').style.display = 'none';
 }
 
 async function loadProfile() {
@@ -1634,6 +1636,9 @@ async function saveProfile() {
     updated_at:     new Date().toISOString(),
   };
   
+  // Auto-save any pending profile photo at the same time
+  if (pendingPfpDataUrl) savePfp();
+
   if (DEMO_MODE) {
     localStorage.setItem(`profile_${currentUser?.id}`, JSON.stringify(payload));
     userProfile = payload;
@@ -1643,7 +1648,7 @@ async function saveProfile() {
     loadPfp();
     return;
   }
-  
+
   const { error } = await db.from('profiles').upsert(payload);
   if (error) { toast('Failed to save profile', 'error'); return; }
   userProfile = payload;
