@@ -116,7 +116,7 @@
             <h3 class="trend-title">Net Worth</h3>
             <div class="trend-value" id="trend-balance">₹0.00</div>
           </div>
-          <div class="trend-period">Last 180 days</div>
+          <div class="trend-period" id="trend-period">Since account creation</div>
         </div>
         <canvas id="chart-trend" height="90"></canvas>
         <div class="trend-stats">
@@ -204,6 +204,24 @@
             </tr>
           </thead>
           <tbody id="monthly-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Yearly summary table -->
+      <div class="card monthly-card">
+        <h3 class="chart-title">Yearly Summary</h3>
+        <table class="monthly-table monthly-table-enhanced">
+          <thead>
+            <tr>
+              <th>Year</th>
+              <th style="color:#34d399;">💰 Received</th>
+              <th style="color:#ef4444;">💸 Spent</th>
+              <th>Net Balance</th>
+              <th>Transactions</th>
+              <th>Savings Rate</th>
+            </tr>
+          </thead>
+          <tbody id="yearly-tbody"></tbody>
         </table>
       </div>
 

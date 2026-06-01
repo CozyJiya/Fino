@@ -735,34 +735,53 @@ function updateStats() {
 ════════════════════════════════════════ */
 function renderTrendChart() {
   const now = new Date();
-  const days = 180;
+  const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const labels = [];
   const data = [];
-  
-  // Calculate cumulative balance for last 180 days
+
+  // Start from account creation date (or earliest transaction, or 30 days ago as fallback)
+  let startDate;
+  if (currentUser?.created_at) {
+    startDate = new Date(currentUser.created_at);
+    startDate.setHours(0, 0, 0, 0);
+  } else if (allExpenses.length > 0) {
+    const earliest = allExpenses.reduce((min, e) => e.date < min ? e.date : min, allExpenses[0].date);
+    startDate = new Date(earliest + 'T00:00:00');
+  } else {
+    startDate = new Date(todayDate);
+    startDate.setDate(todayDate.getDate() - 30);
+  }
+  if (startDate > todayDate) startDate = new Date(todayDate);
+
+  // Update period label
+  const periodEl = $('trend-period');
+  if (periodEl) {
+    periodEl.textContent = `Since ${startDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+  }
+
+  // Calculate cumulative balance from account creation to today
   let runningBalance = 0;
-  
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(now.getDate() - i);
-    const dateStr = d.toISOString().slice(0, 10);
-    
+  const cursor = new Date(startDate);
+  while (cursor <= todayDate) {
+    const dateStr = cursor.toISOString().slice(0, 10);
+
     // Get transactions for this day
     const dayTransactions = allExpenses.filter(e => e.date === dateStr);
-    
+
     // Calculate day's net change (received - spent)
     dayTransactions.forEach(t => {
       const cat = allCategories.find(c => c.id === t.category_id);
       const amount = parseFloat(t.amount);
       if (cat && cat.type === 'received') {
-        runningBalance += amount; // Add received money
+        runningBalance += amount;
       } else {
-        runningBalance -= amount; // Subtract spent money
+        runningBalance -= amount;
       }
     });
-    
+
     labels.push(dateStr);
     data.push(runningBalance);
+    cursor.setDate(cursor.getDate() + 1);
   }
   
   // Calculate stats
@@ -900,6 +919,7 @@ function renderReports() {
   renderDonutChart();
   renderCategoryTable();
   renderMonthlyTable();
+  renderYearlyTable();
 }
 
 function renderCategoryTable() {
@@ -1420,6 +1440,76 @@ function renderMonthlyTable() {
       </td>
       <td style="color:var(--text-muted);text-align:center;font-weight:700;">${grandCount}</td>
       <td style="font-weight:700;color:${grandSRColor};">${grandSRDisplay}</td>
+    </tr>
+  `;
+}
+
+function renderYearlyTable() {
+  const yearly = {};
+
+  allExpenses.forEach(e => {
+    const yr = e.date.slice(0, 4);
+    if (!yearly[yr]) yearly[yr] = { received: 0, spent: 0, count: 0 };
+    const cat = allCategories.find(c => c.id === e.category_id);
+    const amount = parseFloat(e.amount);
+    if (cat?.type === 'received') yearly[yr].received += amount;
+    else yearly[yr].spent += amount;
+    yearly[yr].count++;
+  });
+
+  const years = Object.keys(yearly).sort().reverse();
+  const tbody = $('yearly-tbody');
+
+  if (!years.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px">No data yet</td></tr>`;
+    return;
+  }
+
+  let grandReceived = 0, grandSpent = 0, grandCount = 0;
+
+  tbody.innerHTML = years.map((yr, idx) => {
+    const { received, spent, count } = yearly[yr];
+    const net = received - spent;
+    const savingsRate = received > 0 ? (net / received) * 100 : null;
+    grandReceived += received; grandSpent += spent; grandCount += count;
+
+    let srColor = '#ef4444';
+    if (savingsRate !== null && savingsRate >= 50) srColor = '#34d399';
+    else if (savingsRate !== null && savingsRate >= 20) srColor = '#f59e0b';
+
+    const srDisplay = savingsRate === null
+      ? '<span style="color:var(--text-muted);font-size:12px;">No income</span>'
+      : `<div style="display:flex;align-items:center;gap:8px;">
+           <div style="flex:1;background:rgba(125,159,192,0.15);height:7px;border-radius:4px;overflow:hidden;min-width:60px;">
+             <div style="width:${Math.max(0,Math.min(100,savingsRate))}%;height:100%;background:${srColor};border-radius:4px;transition:width 0.4s;"></div>
+           </div>
+           <span style="min-width:42px;text-align:right;font-weight:600;color:${srColor};font-size:13px;">${savingsRate.toFixed(1)}%</span>
+         </div>`;
+
+    const rowBg = idx % 2 === 0 ? '' : 'background:rgba(78,122,177,0.04);';
+    return `
+      <tr style="${rowBg}">
+        <td style="font-weight:600;">${yr}</td>
+        <td style="color:#34d399;font-weight:700;">+${fmt(received)}</td>
+        <td style="color:#ef4444;font-weight:700;">${spent > 0 ? '−' : ''}${fmt(spent)}</td>
+        <td style="font-weight:700;color:${net >= 0 ? '#34d399' : '#ef4444'};">${net >= 0 ? '+' : ''}${fmt(net)}</td>
+        <td style="color:var(--text-muted);text-align:center;">${count}</td>
+        <td style="min-width:140px;">${srDisplay}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const grandNet = grandReceived - grandSpent;
+  const grandSR = grandReceived > 0 ? (grandNet / grandReceived * 100) : null;
+  const grandSRColor = grandSR !== null && grandSR >= 20 ? '#34d399' : '#ef4444';
+  tbody.innerHTML += `
+    <tr class="monthly-total-row">
+      <td style="font-weight:700;color:var(--white);">📊 All Time</td>
+      <td style="color:#34d399;font-weight:700;">+${fmt(grandReceived)}</td>
+      <td style="color:#ef4444;font-weight:700;">${grandSpent > 0 ? '−' : ''}${fmt(grandSpent)}</td>
+      <td style="font-weight:700;color:${grandNet >= 0 ? '#34d399' : '#ef4444'};">${grandNet >= 0 ? '+' : ''}${fmt(grandNet)}</td>
+      <td style="color:var(--text-muted);text-align:center;font-weight:700;">${grandCount}</td>
+      <td style="font-weight:700;color:${grandSRColor};">${grandSR !== null ? grandSR.toFixed(1) + '%' : '—'}</td>
     </tr>
   `;
 }
