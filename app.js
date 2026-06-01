@@ -763,7 +763,10 @@ function renderTrendChart() {
   let runningBalance = 0;
   const cursor = new Date(startDate);
   while (cursor <= todayDate) {
-    const dateStr = cursor.toISOString().slice(0, 10);
+    const y = cursor.getFullYear();
+    const m = String(cursor.getMonth() + 1).padStart(2, '0');
+    const d = String(cursor.getDate()).padStart(2, '0');
+    const dateStr = `${y}-${m}-${d}`;
 
     // Get transactions for this day
     const dayTransactions = allExpenses.filter(e => e.date === dateStr);
@@ -1459,6 +1462,7 @@ function renderYearlyTable() {
 
   const years = Object.keys(yearly).sort().reverse();
   const tbody = $('yearly-tbody');
+  if (!tbody) return;
 
   if (!years.length) {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px">No data yet</td></tr>`;
