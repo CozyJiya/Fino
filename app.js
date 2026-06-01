@@ -827,6 +827,7 @@ function renderTrendChart() {
     options: {
       responsive: true,
       maintainAspectRatio: true,
+      aspectRatio: 3,
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -1182,6 +1183,8 @@ function renderBarChart() {
     },
     options: {
       responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 2,
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
@@ -1258,7 +1261,7 @@ function renderDonutChart() {
     donutChart = new Chart(ctx, {
       type: 'doughnut',
       data: { labels: ['No Data'], datasets: [{ data: [1], backgroundColor: ['rgba(185,135,175,0.2)'], borderWidth: 0 }] },
-      options: { responsive: true, cutout: '62%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+      options: { responsive: true, maintainAspectRatio: true, cutout: '62%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
     });
     $('donut-legend').innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px 0;">No spending this month</p>';
     $('donut-total-val').textContent = fmt(0);
@@ -1280,6 +1283,7 @@ function renderDonutChart() {
     },
     options: {
       responsive: true,
+      maintainAspectRatio: true,
       cutout: '62%',
       plugins: {
         legend: { display: false },
@@ -1509,8 +1513,6 @@ function removePfp() {
 function loadPfp() {
   const stored = localStorage.getItem(`pfp_${currentUser?.id}`) || userProfile?.pfp_url || null;
   updatePfpDisplay(stored);
-  // Hide save/remove buttons unless there's an unsaved photo pending
-  if (!pendingPfpDataUrl) $('pfp-actions').style.display = 'none';
 }
 
 async function loadProfile() {
@@ -1636,9 +1638,6 @@ async function saveProfile() {
     updated_at:     new Date().toISOString(),
   };
   
-  // Auto-save any pending profile photo at the same time
-  if (pendingPfpDataUrl) savePfp();
-
   if (DEMO_MODE) {
     localStorage.setItem(`profile_${currentUser?.id}`, JSON.stringify(payload));
     userProfile = payload;
@@ -1648,7 +1647,7 @@ async function saveProfile() {
     loadPfp();
     return;
   }
-
+  
   const { error } = await db.from('profiles').upsert(payload);
   if (error) { toast('Failed to save profile', 'error'); return; }
   userProfile = payload;
