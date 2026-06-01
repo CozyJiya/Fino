@@ -284,10 +284,10 @@ html, body {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 22px 24px 24px;
+  padding: 18px 20px 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .stat-label {
@@ -297,7 +297,7 @@ html, body {
 }
 
 .stat-value {
-  font-size: 30px;
+  font-size: clamp(18px, 2.2vw, 30px);
   font-weight: 700;
   color: var(--white);
   letter-spacing: -0.5px;
@@ -307,8 +307,13 @@ html, body {
    TREND CHART (HOME)
 ═══════════════════════════════ */
 .trend-card {
-  margin-bottom: 16px;
-  padding: 20px 20px 18px;
+  margin-bottom: 14px;
+  padding: 18px 18px 16px;
+}
+
+#chart-trend {
+  width: 100%;
+  max-height: 260px;
 }
 
 .trend-header {
@@ -660,17 +665,28 @@ input[type="date"] { color-scheme: dark; }
 
 .chart-card { padding: 22px 24px; }
 
-.chart-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-muted);
-  margin-bottom: 20px;
+#chart-bar {
+  width: 100%;
+  max-height: 320px;
 }
 
 .donut-wrap {
   display: flex;
   justify-content: center;
+  align-items: center;
   margin-bottom: 16px;
+}
+
+#chart-donut {
+  max-width: 300px;
+  max-height: 300px;
+}
+
+.chart-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 20px;
 }
 
 .donut-legend {
@@ -1516,269 +1532,514 @@ input[type="date"] { color-scheme: dark; }
 ═══════════════════════════════ */
 @media (max-width: 640px) {
 
-  /* ── Login / Signup: explicitly keep centered ── */
-  .login-page {
-    align-items: center;
-    justify-content: center;
-    padding: 20px 0;
-  }
+  /* ── Global mobile touch targets ── */
+  * { -webkit-tap-highlight-color: transparent; }
 
-  .login-card {
-    padding: 32px 20px 36px;
-    border-radius: 16px;
-    margin: 0 16px;
-    max-width: 100%;
-  }
+  html, body { font-size: 16px; }
 
-  .login-title { font-size: 20px; }
-  .login-sub { margin-bottom: 24px; }
-
-  /* ── App shell: fixed height so views scroll internally ── */
-  #page-app {
-    height: 100vh;
-    overflow: hidden;
-  }
-
+  /* ── Layout ── */
   .main-area {
     margin-left: 0;
-    height: 100%;
-    min-height: unset;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+    padding-bottom: 0;
   }
 
+  /* ── Top header ── */
   .top-header {
-    padding: 12px 16px;
-    flex-shrink: 0;
+    padding: 14px 18px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 90;
+    background: var(--bg-page);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
 
-  /* Views scroll their own content */
+  .app-title {
+    font-size: 17px;
+  }
+
+  /* ── Views ── */
   .view {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 14px 14px 80px;
-    display: none;
+    padding: 16px 16px 100px;
   }
-
-  .view.active { display: block; }
-
-  /* Settings view is flex — needs special handling */
-  .settings-view        { display: none; flex-direction: column; }
-  .settings-view.active { display: flex; flex-direction: column; }
 
   /* ── Bottom nav bar ── */
   .sidebar {
-    position: fixed;
-    bottom: 0; top: auto; left: 0; right: 0;
+    bottom: 0; top: auto;
     width: 100%;
-    height: 60px;
+    height: 64px;
     flex-direction: row;
-    align-items: center;
-    padding: 0 4px;
+    padding: 0 8px;
     border-right: none;
     border-top: 1px solid var(--border);
-    z-index: 300;
+    z-index: 200;
+    /* Safe area for notched phones */
+    padding-bottom: env(safe-area-inset-bottom);
+    height: calc(64px + env(safe-area-inset-bottom));
   }
 
   .sidebar-nav {
-    flex: 1;
     flex-direction: row;
-    align-items: center;
-    justify-content: space-around;
     gap: 0;
-    width: auto;
-  }
-
-  .nav-btn {
-    border-left: none !important;
-    border-top: 2px solid transparent;
-    height: 60px;
-    width: 52px;
-    flex-shrink: 0;
-  }
-
-  .nav-btn.active {
-    border-left: none !important;
-    border-top-color: var(--white);
-    background: rgba(78,122,177,0.1);
-  }
-
-  /* Add button as circular FAB */
-  .nav-btn.add-expense-btn {
-    all: unset;
-    display: flex;
+    flex: 1;
+    justify-content: space-around;
     align-items: center;
-    justify-content: center;
-    width: 46px;
-    height: 46px;
-    border-radius: 50%;
-    background: var(--accent-btn);
-    color: var(--white);
-    cursor: pointer;
-    box-shadow: 0 4px 14px rgba(78,122,177,0.5);
-    flex-shrink: 0;
-    margin-top: -10px;
-    transition: opacity 0.18s;
   }
-
-  .nav-btn.add-expense-btn:active { opacity: 0.8; }
-
-  .nav-divider { display: none; }
 
   .sidebar-bottom {
     flex-direction: row;
     align-items: center;
-    padding: 0 10px;
-    flex-shrink: 0;
+    padding-right: 8px;
   }
 
-  .avatar-btn { width: 32px; height: 32px; font-size: 13px; }
+  .nav-btn {
+    border-left: none;
+    border-top: 3px solid transparent;
+    height: 64px;
+    width: 60px;
+    flex-shrink: 0;
+    border-radius: 0;
+  }
 
-  /* ── Stats ── */
-  .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-  .stats-row .stat-card:first-child { grid-column: 1 / -1; }
-  .stat-card { padding: 14px 16px; gap: 6px; }
-  .stat-value { font-size: 20px; }
+  .nav-btn.active {
+    border-left: none;
+    border-top-color: var(--white);
+    background: rgba(78,122,177,0.08);
+  }
+
+  /* Add expense FAB — round floating button style */
+  .nav-btn.add-expense-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border-top: 3px solid transparent;
+    margin-top: -4px;
+    box-shadow: 0 4px 16px rgba(78,122,177,0.45);
+  }
+
+  .nav-divider { display: none; }
+
+  .avatar-btn {
+    width: 32px; height: 32px;
+    font-size: 13px;
+  }
+
+  /* ── Login / Signup ── */
+  .login-page {
+    padding: 16px;
+    align-items: flex-start;
+    padding-top: max(48px, env(safe-area-inset-top, 48px));
+  }
+
+  .login-card {
+    padding: 32px 22px 28px;
+    border-radius: 16px;
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .login-title { font-size: 22px; }
+  .login-sub { margin-bottom: 28px; }
+
+  .login-card .field-input {
+    padding: 15px 20px;
+    font-size: 16px; /* prevent zoom on iOS */
+  }
+
+  .btn-signin {
+    padding: 16px;
+    font-size: 16px;
+    margin: 12px 0 20px;
+  }
+
+  /* ── Stats row ── */
+  .stats-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .stats-row .stat-card:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .stat-card {
+    padding: 14px 16px 16px;
+    gap: 6px;
+  }
+
   .stat-label { font-size: 12px; }
+  .stat-value { font-size: 24px; }
 
-  /* ── Trend chart ── */
-  .trend-card { padding: 16px 14px; }
-  .trend-value { font-size: 20px; }
-  .trend-stat-value { font-size: 14px; }
+  /* ── Trend chart card ── */
+  .trend-card {
+    padding: 18px 16px 16px;
+    margin-bottom: 12px;
+  }
+
+  .trend-value { font-size: 22px; }
+  .trend-period { font-size: 11px; }
+
+  .trend-stats {
+    gap: 0;
+    flex-wrap: nowrap;
+    margin-top: 14px;
+  }
+
+  .trend-stat-item {
+    flex: 1;
+    min-width: 0;
+  }
+
   .trend-stat-label { font-size: 9px; }
+  .trend-stat-value { font-size: 14px; }
 
-  /* ── Cards & list ── */
-  .card { padding: 16px; }
-  .expense-list { max-height: none; padding-right: 0; }
-  .expense-amount { font-size: 15px; }
-  .expense-item { padding: 12px 0; }
-  .section-title { font-size: 14px; margin-bottom: 12px; }
+  /* ── Cards ── */
+  .card { padding: 18px 16px; }
 
-  /* ── Toasts: above nav ── */
-  #toasts { bottom: 72px; right: 12px; left: 12px; }
-  .toast { min-width: unset; width: 100%; }
+  .section-title {
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
 
-  /* ── Add expense modal: bottom sheet ── */
-  #add-expense-modal { align-items: flex-end; }
+  /* ── Expense list ── */
+  .expense-list {
+    max-height: none;
+    padding-right: 0;
+  }
+
+  .expense-item {
+    padding: 14px 0;
+  }
+
+  .expense-amount { font-size: 17px; }
+  .expense-meta { font-size: 12px; }
+
+  /* Bigger touch targets for delete/edit buttons */
+  .btn-del-expense,
+  .btn-edit-expense {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* ── Toasts — sit above bottom nav ── */
+  #toasts {
+    bottom: calc(72px + env(safe-area-inset-bottom));
+    right: 12px;
+    left: 12px;
+  }
+
+  .toast {
+    min-width: unset;
+    width: 100%;
+    font-size: 13px;
+    padding: 12px 14px;
+  }
+
+  /* ── Add expense modal — bottom sheet ── */
+  #add-expense-modal {
+    align-items: flex-end;
+  }
 
   .add-expense-dialog {
     min-width: unset;
     width: 100%;
     max-width: 100%;
-    border-radius: 20px 20px 0 0;
-    padding: 8px 20px 36px;
-    max-height: 92vh;
-    overflow-y: auto;
+    border-radius: 24px 24px 0 0;
+    padding: 20px 18px calc(24px + env(safe-area-inset-bottom));
+    max-height: 94vh;
+    /* drag-handle visual */
+    background-image: linear-gradient(var(--border) 0%, var(--border) 100%);
+    background-position: center 10px;
+    background-size: 40px 4px;
+    background-repeat: no-repeat;
   }
 
-  .add-expense-dialog::before {
-    content: '';
-    display: block;
-    width: 36px;
-    height: 4px;
-    border-radius: 2px;
-    background: rgba(125,159,192,0.3);
-    margin: 0 auto 20px;
+  .add-expense-dialog h3 {
+    font-size: 18px;
+    margin-top: 10px;
+    margin-bottom: 20px;
   }
 
-  /* ── All other modals: full width, centered ── */
+  .add-expense-dialog .field-input {
+    font-size: 16px; /* prevent iOS zoom */
+    padding: 13px 14px;
+  }
+
+  .type-btn {
+    padding: 11px 12px;
+    font-size: 14px;
+  }
+
+  .pill {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  .char-counter { font-size: 11px; }
+
+  .dialog-actions {
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .btn-cancel-del,
+  .btn-confirm-del {
+    flex: 1;
+    padding: 13px 16px;
+    font-size: 14px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Delete / edit modals — centred with margin ── */
   .delete-dialog {
     min-width: unset;
-    width: calc(100vw - 32px);
-    max-width: calc(100vw - 32px) !important;
+    width: calc(100% - 32px);
+    max-width: 100%;
     padding: 24px 20px;
   }
+
+  .delete-dialog p { font-size: 15px; }
 
   .edit-account-dialog {
     min-width: unset;
-    width: calc(100vw - 32px);
-    max-width: calc(100vw - 32px);
+    width: calc(100% - 32px);
+    max-width: 100%;
     padding: 24px 20px;
   }
 
+  .edit-account-dialog h3 {
+    font-size: 17px;
+    margin-bottom: 18px;
+  }
+
+  .edit-account-dialog .field-input {
+    font-size: 16px;
+  }
+
+  /* ── OTP modal ── */
   .otp-dialog {
     min-width: unset;
-    width: calc(100vw - 32px);
-    max-width: calc(100vw - 32px);
+    width: calc(100% - 32px);
+    max-width: 100%;
     padding: 24px 16px;
   }
 
-  .otp-input { width: 40px; height: 50px; font-size: 20px; }
-  .otp-input-group { gap: 6px; }
+  .otp-dialog h3 { font-size: 18px; }
 
-  /* ── Settings: tabs on top, content scrolls below ── */
+  .otp-input {
+    width: 42px;
+    height: 52px;
+    font-size: 22px;
+  }
+
+  .otp-input-group { gap: 7px; }
+
+  /* ── Reports page ── */
+  #view-reports .page-title,
+  .page-title { font-size: 18px; margin-bottom: 18px; }
+
+  .reports-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .chart-card { padding: 14px 12px; }
+  .chart-title { font-size: 12px; margin-bottom: 12px; }
+
+  #chart-trend {
+    height: clamp(130px, 18vh, 200px);
+  }
+
+  #chart-bar {
+    height: clamp(160px, 26vh, 280px);
+  }
+
+  #chart-donut {
+    width: clamp(160px, 55vw, 240px) !important;
+    height: clamp(160px, 55vw, 240px) !important;
+  }
+
+  /* Make tables scrollable horizontally */
+  .monthly-card,
+  .card:has(.cat-table),
+  .card:has(.monthly-table) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .cat-table-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .cat-table-summary { flex-wrap: wrap; }
+
+  .btn-download {
+    width: 100%;
+    justify-content: center;
+    padding: 13px 20px;
+  }
+
+  .donut-legend {
+    grid-template-columns: 1fr;
+  }
+
+  .legend-val { margin-left: auto; }
+
+  /* ── Settings — stack vertically ── */
+  .settings-view.active {
+    flex-direction: column;
+  }
+
   .settings-sidebar {
     width: 100%;
-    padding: 12px 14px 0;
+    padding: 16px 16px 0;
     border-right: none;
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
   }
 
-  .settings-heading { font-size: 15px; margin-bottom: 10px; padding-left: 2px; }
+  .settings-heading {
+    margin-bottom: 10px;
+    font-size: 16px;
+  }
 
   .settings-nav {
     flex-direction: row;
     overflow-x: auto;
     gap: 6px;
-    padding-bottom: 12px;
-    scrollbar-width: none;
+    padding-bottom: 14px;
     -webkit-overflow-scrolling: touch;
+    /* hide scrollbar */
+    scrollbar-width: none;
   }
 
   .settings-nav::-webkit-scrollbar { display: none; }
+
   .settings-nav li { flex-shrink: 0; }
 
   .settings-nav-btn {
-    padding: 7px 16px;
+    padding: 8px 16px;
     font-size: 13px;
     white-space: nowrap;
     border-radius: 20px;
     background: rgba(78,122,177,0.08);
+    height: auto;
+    gap: 6px;
   }
 
+  /* Hide icons in settings nav tabs on mobile to save space */
   .settings-nav-btn svg { display: none; }
-  .settings-nav-btn.active { background: var(--accent-btn); color: var(--white); }
-  .settings-nav-btn.signout-btn { margin-top: 0; background: rgba(239,68,68,0.08); }
+
+  .settings-nav-btn.active {
+    background: var(--accent-btn);
+    color: var(--white);
+  }
+
+  .settings-nav-btn.signout-btn {
+    margin-top: 0;
+    background: rgba(239,68,68,0.08);
+  }
 
   .settings-content {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 16px 14px 80px;
+    padding: 18px 16px;
+    overflow-y: visible;
   }
 
-  .settings-content-title { font-size: 17px; margin-bottom: 14px; }
+  .settings-content-title {
+    font-size: 17px;
+    margin-bottom: 16px;
+  }
 
   /* ── Profile form ── */
   .profile-row.three-col,
-  .profile-row.two-col { grid-template-columns: 1fr; }
-  .pfp-section { flex-direction: column; align-items: flex-start; gap: 12px; }
-  .pfp-actions { flex-direction: row; }
+  .profile-row.two-col {
+    grid-template-columns: 1fr;
+  }
 
-  /* ── Reports ── */
-  .page-title { font-size: 18px; margin-bottom: 16px; }
-  .cat-table-header { flex-direction: column; align-items: flex-start; }
-  .btn-download { width: 100%; justify-content: center; }
+  .profile-card { max-width: 100%; }
 
-  /* ── Account ── */
-  .btn-edit-field { padding: 10px 12px; font-size: 12px; }
+  .pfp-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .pfp-actions {
+    flex-direction: row;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .btn-pfp-save,
+  .btn-pfp-remove {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .field-input {
+    font-size: 16px; /* prevents iOS zoom on focus */
+  }
+
+  /* ── Input with edit button ── */
+  .input-with-button {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .btn-edit-field {
+    padding: 10px 14px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  /* ── Danger zone in settings ── */
+  .btn-delete-inline {
+    width: 100%;
+    justify-content: center;
+    margin-top: 4px;
+  }
+
+  /* ── btn-save-profile full width ── */
+  .btn-save-profile {
+    width: 100%;
+    padding: 14px;
+    text-align: center;
+  }
+
+  /* ── History table ── */
+  #settings-history .profile-card {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  #history-table {
+    font-size: 12px;
+  }
+
+  #history-table th,
+  #history-table td {
+    padding: 10px 10px;
+  }
 }
 
 /* ═══════════════════════════════
-   VERY SMALL (≤380px)
+   RESPONSIVE — VERY SMALL (≤380px)
 ═══════════════════════════════ */
 @media (max-width: 380px) {
   .stats-row { grid-template-columns: 1fr; }
   .stats-row .stat-card:first-child { grid-column: auto; }
-  .otp-input { width: 36px; height: 44px; font-size: 18px; }
-  .otp-input-group { gap: 4px; }
-  .nav-btn { width: 44px; }
-  .nav-btn.add-expense-btn { width: 42px !important; height: 42px !important; }
+  .stat-value { font-size: 22px; }
+  .otp-input { width: 38px; height: 46px; font-size: 20px; }
+  .otp-input-group { gap: 5px; }
+  .trend-stats { gap: 0; }
+  .trend-stat-value { font-size: 13px; }
+  .add-expense-dialog { max-height: 96vh; }
+  .view { padding: 14px 12px 100px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
