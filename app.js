@@ -2190,6 +2190,17 @@ async function downloadReport() {
     });
     const monthKeys = Object.keys(monthly).sort().reverse().slice(0, 6);
 
+    // Yearly summary (all years in data)
+    const yearly = {};
+    allExpenses.forEach(e => {
+      const y = e.date.slice(0, 4);
+      if (!yearly[y]) yearly[y] = { received: 0, spent: 0 };
+      const cat = allCategories.find(c => c.id === e.category_id);
+      if (cat?.type === 'received') yearly[y].received += parseFloat(e.amount);
+      else yearly[y].spent += parseFloat(e.amount);
+    });
+    const yearKeys = Object.keys(yearly).sort().reverse();
+
     const recent = allExpenses.slice(0, 15);
     const fullName = userProfile
       ? [userProfile.first_name, userProfile.middle_name, userProfile.surname].filter(Boolean).join(' ')
@@ -2252,6 +2263,125 @@ async function downloadReport() {
         <td style="padding:10px 14px;text-align:right;color:${amtColor};font-weight:700;white-space:nowrap;">${amtPrefix}${rf(e.amount)}</td>
       </tr>`;
     }).join('');
+
+    const yearRowsHtml = yearKeys.map((y, i) => {
+      const { received, spent } = yearly[y];
+      const net = received - spent;
+      const sr = received > 0 ? ((net / received) * 100).toFixed(1) + '%' : 'N/A';
+      const bg = i % 2 === 0 ? '#f8fafc' : 'white';
+      const netColor = net >= 0 ? '#059669' : '#dc2626';
+      const netStr = (net >= 0 ? '' : '-') + rf(Math.abs(net));
+      return `<tr style="background:${bg};">
+        <td style="padding:10px 14px;color:#0f172a;font-weight:600;">${y}</td>
+        <td style="padding:10px 14px;color:#059669;font-weight:600;">${rf(received)}</td>
+        <td style="padding:10px 14px;color:#dc2626;font-weight:600;">${rf(spent)}</td>
+        <td style="padding:10px 14px;color:${netColor};font-weight:600;">${netStr}</td>
+        <td style="padding:10px 14px;color:#374151;">${sr}</td>
+      </tr>`;
+    }).join('');
+
+    // Monthly bar chart SVG (inline, works with html2canvas)
+    const mChartW = 730, mChartH = 180, mBarAreaH = 130, mPadL = 60, mPadR = 20, mPadTop = 14, mBarGap = 6;
+    const chartMonths = Object.keys(monthly).sort();
+    let monthlySvg = '';
+    if (chartMonths.length > 0) {
+      const mMaxVal = Math.max(...chartMonths.map(m => Math.max(monthly[m].received, monthly[m].spent)), 1);
+      const mBarW = Math.min(32, Math.floor((mChartW - mPadL - mPadR - (chartMonths.length + 1) * mBarGap) / (chartMonths.length * 2)));
+      const mGroupW = mBarW * 2 + mBarGap;
+      const mGroupGap = Math.floor((mChartW - mPadL - mPadR - chartMonths.length * mGroupW) / (chartMonths.length + 1));
+
+      const mBarRects = chartMonths.map((m, gi) => {
+        const x0 = mPadL + mGroupGap + gi * (mGroupW + mGroupGap);
+        const inc = monthly[m].received;
+        const spd = monthly[m].spent;
+        const hInc = Math.round((inc / mMaxVal) * mBarAreaH);
+        const hSpd = Math.round((spd / mMaxVal) * mBarAreaH);
+        const yInc = mPadTop + mBarAreaH - hInc;
+        const ySpd = mPadTop + mBarAreaH - hSpd;
+        const labelY = mPadTop + mBarAreaH + 16;
+        const shortLabel = new Date(m + '-02').toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
+        return `
+          <rect x="${x0}" y="${yInc}" width="${mBarW}" height="${hInc}" fill="#10b981" rx="3"/>
+          <rect x="${x0 + mBarW + 4}" y="${ySpd}" width="${mBarW}" height="${hSpd}" fill="#ef4444" rx="3"/>
+          <text x="${x0 + mBarW + 2}" y="${labelY}" text-anchor="middle" font-size="10" fill="#64748b" font-family="Arial,sans-serif">${shortLabel}</text>
+        `;
+      }).join('');
+
+      const mGridLines = [0, 0.25, 0.5, 0.75, 1].map(pct => {
+        const yPos = mPadTop + mBarAreaH - Math.round(pct * mBarAreaH);
+        const val = pct * mMaxVal;
+        const label = val >= 1e5 ? (val/1e5).toFixed(1)+'L' : val >= 1e3 ? (val/1e3).toFixed(0)+'K' : val.toFixed(0);
+        return `
+          <line x1="${mPadL}" y1="${yPos}" x2="${mChartW - mPadR}" y2="${yPos}" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="${mPadL - 5}" y="${yPos + 4}" text-anchor="end" font-size="10" fill="#94a3b8" font-family="Arial,sans-serif">₹${label}</text>
+        `;
+      }).join('');
+
+      const mLegend = `
+        <rect x="${mPadL}" y="${mPadTop + mBarAreaH + 28}" width="10" height="10" fill="#10b981" rx="2"/>
+        <text x="${mPadL + 14}" y="${mPadTop + mBarAreaH + 37}" font-size="11" fill="#374151" font-family="Arial,sans-serif">Income</text>
+        <rect x="${mPadL + 70}" y="${mPadTop + mBarAreaH + 28}" width="10" height="10" fill="#ef4444" rx="2"/>
+        <text x="${mPadL + 84}" y="${mPadTop + mBarAreaH + 37}" font-size="11" fill="#374151" font-family="Arial,sans-serif">Spent</text>
+      `;
+
+      monthlySvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${mChartW}" height="${mChartH}" style="display:block;overflow:visible;">
+        ${mGridLines}
+        ${mBarRects}
+        ${mLegend}
+      </svg>`;
+    }
+
+    // Yearly bar chart SVG (inline, works with html2canvas)
+    const chartW = 730, chartH = 180, barAreaH = 130, padL = 60, padR = 20, padTop = 14, barGap = 12;
+    const chartYears = Object.keys(yearly).sort();
+    let yearlySvg = '';
+    if (chartYears.length > 0) {
+      const maxVal = Math.max(...chartYears.map(y => Math.max(yearly[y].received, yearly[y].spent)), 1);
+      const totalBars = chartYears.length * 2;
+      const barW = Math.min(40, Math.floor((chartW - padL - padR - (chartYears.length + 1) * barGap) / totalBars));
+      const groupW = barW * 2 + barGap;
+      const groupGap = Math.floor((chartW - padL - padR - chartYears.length * groupW) / (chartYears.length + 1));
+
+      const barRects = chartYears.map((y, gi) => {
+        const x0 = padL + groupGap + gi * (groupW + groupGap);
+        const inc = yearly[y].received;
+        const spd = yearly[y].spent;
+        const hInc = Math.round((inc / maxVal) * barAreaH);
+        const hSpd = Math.round((spd / maxVal) * barAreaH);
+        const yInc = padTop + barAreaH - hInc;
+        const ySpd = padTop + barAreaH - hSpd;
+        const labelY = padTop + barAreaH + 16;
+        return `
+          <rect x="${x0}" y="${yInc}" width="${barW}" height="${hInc}" fill="#10b981" rx="3"/>
+          <rect x="${x0 + barW + 4}" y="${ySpd}" width="${barW}" height="${hSpd}" fill="#ef4444" rx="3"/>
+          <text x="${x0 + barW + 2}" y="${labelY}" text-anchor="middle" font-size="11" fill="#64748b" font-family="Arial,sans-serif">${y}</text>
+        `;
+      }).join('');
+
+      // Y-axis gridlines + labels
+      const gridLines = [0, 0.25, 0.5, 0.75, 1].map(pct => {
+        const yPos = padTop + barAreaH - Math.round(pct * barAreaH);
+        const val = pct * maxVal;
+        const label = val >= 1e5 ? (val/1e5).toFixed(1)+'L' : val >= 1e3 ? (val/1e3).toFixed(0)+'K' : val.toFixed(0);
+        return `
+          <line x1="${padL}" y1="${yPos}" x2="${chartW - padR}" y2="${yPos}" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="${padL - 5}" y="${yPos + 4}" text-anchor="end" font-size="10" fill="#94a3b8" font-family="Arial,sans-serif">₹${label}</text>
+        `;
+      }).join('');
+
+      const legend = `
+        <rect x="${padL}" y="${padTop + barAreaH + 28}" width="10" height="10" fill="#10b981" rx="2"/>
+        <text x="${padL + 14}" y="${padTop + barAreaH + 37}" font-size="11" fill="#374151" font-family="Arial,sans-serif">Income</text>
+        <rect x="${padL + 70}" y="${padTop + barAreaH + 28}" width="10" height="10" fill="#ef4444" rx="2"/>
+        <text x="${padL + 84}" y="${padTop + barAreaH + 37}" font-size="11" fill="#374151" font-family="Arial,sans-serif">Spent</text>
+      `;
+
+      yearlySvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${chartW}" height="${chartH}" style="display:block;overflow:visible;">
+        ${gridLines}
+        ${barRects}
+        ${legend}
+      </svg>`;
+    }
 
     const html = `<div style="width:794px;font-family:Arial,Helvetica,sans-serif;background:#f1f5f9;">
 
@@ -2327,6 +2457,7 @@ async function downloadReport() {
             <div style="width:4px;height:22px;background:#3b82f6;border-radius:2px;flex-shrink:0;"></div>
             <div style="font-size:15px;font-weight:700;color:#0f172a;">Monthly Summary</div>
           </div>
+          ${monthlySvg ? `<div style="margin-bottom:16px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">${monthlySvg}</div>` : ''}
           <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead>
               <tr style="background:#0d1f3c;color:white;">
@@ -2338,6 +2469,27 @@ async function downloadReport() {
               </tr>
             </thead>
             <tbody>${monthKeys.length ? monthRowsHtml : '<tr><td colspan="5" style="padding:14px;color:#94a3b8;text-align:center;">No data yet</td></tr>'}</tbody>
+          </table>
+        </div>
+
+        <!-- Yearly Summary -->
+        <div style="margin:0 32px 24px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+            <div style="width:4px;height:22px;background:#3b82f6;border-radius:2px;flex-shrink:0;"></div>
+            <div style="font-size:15px;font-weight:700;color:#0f172a;">Yearly Summary</div>
+          </div>
+          ${yearlySvg ? `<div style="margin-bottom:16px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">${yearlySvg}</div>` : ''}
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead>
+              <tr style="background:#0d1f3c;color:white;">
+                <th style="padding:11px 14px;text-align:left;font-weight:600;">Year</th>
+                <th style="padding:11px 14px;text-align:left;font-weight:600;">Income</th>
+                <th style="padding:11px 14px;text-align:left;font-weight:600;">Spent</th>
+                <th style="padding:11px 14px;text-align:left;font-weight:600;">Net</th>
+                <th style="padding:11px 14px;text-align:left;font-weight:600;">Savings%</th>
+              </tr>
+            </thead>
+            <tbody>${yearKeys.length ? yearRowsHtml : '<tr><td colspan="5" style="padding:14px;color:#94a3b8;text-align:center;">No data yet</td></tr>'}</tbody>
           </table>
         </div>
 
