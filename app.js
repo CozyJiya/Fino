@@ -59,33 +59,49 @@ function toast(msg, type = 'success') {
 ════════════════════════════════════════ */
 async function checkSession() {
   if (DEMO_MODE) {
-    // Demo mode - skip to login screen
-    showLogin();
+    showLandingPage();
     return;
   }
   
   const { data: { session } } = await db.auth.getSession();
   if (session) {
     currentUser = session.user;
-    showApp();
+    // Return intent = user was sent to login mid-flow (e.g. to write a review)
+    if (sessionStorage.getItem("returnTo") && typeof window._handleReturnIntent === "function") {
+      window._handleReturnIntent();
+    } else {
+      // Signed in but visiting landing page normally — stay on landing page.
+      // The nav button already shows "Go to App" (set by checkLandingSession).
+      showLandingPage();
+    }
   } else {
-    showLogin();
+    showLandingPage();
   }
 }
 
+function showLandingPage() {
+  $('page-landing').classList.remove('hidden');
+  $('page-login').classList.add('hidden');
+  $('page-signup').classList.add('hidden');
+  $('page-app').classList.add('hidden');
+}
+
 function showLogin() {
+  $('page-landing').classList.add('hidden');
   $('page-login').classList.remove('hidden');
   $('page-signup').classList.add('hidden');
   $('page-app').classList.add('hidden');
 }
 
 function showSignup() {
+  $('page-landing').classList.add('hidden');
   $('page-login').classList.add('hidden');
   $('page-signup').classList.remove('hidden');
   $('page-app').classList.add('hidden');
 }
 
 async function showApp() {
+  $('page-landing').classList.add('hidden');
   $('page-login').classList.add('hidden');
   $('page-signup').classList.add('hidden');
   $('page-app').classList.remove('hidden');
@@ -178,7 +194,12 @@ async function signIn() {
     }, { onConflict: 'id', ignoreDuplicates: false });
   }
 
-  showApp();
+  // If user came from the landing page (e.g. to write a review), go back there
+  if (sessionStorage.getItem('returnTo') && typeof window._handleReturnIntent === 'function') {
+    window._handleReturnIntent();
+  } else {
+    showApp();
+  }
 }
 
 async function signUp() {
@@ -239,17 +260,21 @@ async function signUp() {
 
 async function signOut() {
   if (DEMO_MODE) {
-    currentUser = null;
     allExpenses = [];
-    localStorage.removeItem(`exp_${currentUser?.id}`);
-    showLogin();
+    currentUser = null;
+    showLandingPage();
     return;
   }
   
-  await db.auth.signOut();
+  await db.auth.signOut();  // This clears the Supabase session cookie/token
   currentUser = null;
   allExpenses = [];
-  showLogin();
+  // Reset landing nav back to "Sign In" state
+  const launchBtn = document.getElementById('lp-btn-launch');
+  const userNav   = document.getElementById('lp-user-nav');
+  if (launchBtn) { launchBtn.classList.remove('hidden'); launchBtn.setAttribute('data-action','login'); }
+  if (userNav)   userNav.classList.add('hidden');
+  showLandingPage();
 }
 
 /* ════════════════════════════════════════
@@ -2615,6 +2640,63 @@ function closeAddExpenseModal() {
 }
 
 /* ════════════════════════════════════════
+   LANDING PAGE — CONTACT FORM
+════════════════════════════════════════ */
+async function handleContactForm(e) {
+  e.preventDefault();
+  
+  const name = $('contact-name').value.trim();
+  const email = $('contact-email').value.trim();
+  const subject = $('contact-subject').value.trim();
+  const message = $('contact-message').value.trim();
+  
+  if (!name || !email || !subject || !message) {
+    toast('Please fill all fields', 'error');
+    return;
+  }
+  
+  const btn = $('contact-submit');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span>Sending...</span>';
+  
+  try {
+    // In demo/development mode, just log the message
+    if (DEMO_MODE) {
+      console.log('📧 Contact Form Submission:', { name, email, subject, message });
+      toast('Message sent! (Demo mode - check console)', 'success');
+      $('contact-form').reset();
+    } else {
+      // In production, you can integrate with a service like:
+      // - EmailJS: https://www.emailjs.com/
+      // - FormSpree: https://formspree.io/
+      // - Supabase Edge Functions
+      // - Your own backend API
+      
+      // Example with Supabase (requires setting up edge function):
+      /*
+      const { error } = await db.functions.invoke('send-contact-email', {
+        body: { name, email, subject, message }
+      });
+      
+      if (error) throw error;
+      */
+      
+      // For now, just log and show success
+      console.log('📧 Contact Form Submission:', { name, email, subject, message });
+      toast('Message sent successfully! We\'ll get back to you soon.', 'success');
+      $('contact-form').reset();
+    }
+  } catch (error) {
+    console.error('Error sending message:', error);
+    toast('Failed to send message. Please try again.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
+}
+
+/* ════════════════════════════════════════
    EVENT BINDING
 ════════════════════════════════════════ */
 function bindEvents() {
@@ -2708,6 +2790,55 @@ function bindEvents() {
 
   /* Reports */
   $('btn-download').addEventListener('click', downloadReport);
+
+  /* Landing Page */
+  // Note: the nav Sign In button (id="lp-btn-launch") is handled in index.html's
+  // DOMContentLoaded block. If session is active it shows "Go to App", otherwise
+  // the DOMContentLoaded listener calls goToLogin(). Nothing to do here.
+  
+  if ($('hero-signup-btn')) {
+    $('hero-signup-btn').addEventListener('click', () => {
+      $('page-landing').classList.add('hidden');
+      showSignup();
+    });
+  }
+  
+  if ($('hero-demo-btn')) {
+    $('hero-demo-btn').addEventListener('click', () => {
+      $('page-landing').classList.add('hidden');
+      showLogin();
+      toast('Demo mode enabled! Sign in with any credentials', 'success');
+    });
+  }
+  
+  // Pricing buttons
+  ['free', 'pro', 'business'].forEach(plan => {
+    const btn = $(`pricing-${plan}-btn`);
+    if (btn) {
+      btn.addEventListener('click', () => {
+        $('page-landing').classList.add('hidden');
+        showSignup();
+        toast(`Selected ${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan! Create your account to continue.`, 'success');
+      });
+    }
+  });
+  
+  // Contact form
+  if ($('contact-form')) {
+    $('contact-form').addEventListener('submit', handleContactForm);
+  }
+
+  // Smooth scroll for navigation links
+  document.querySelectorAll('.nav-links a[href^="#"]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetId = link.getAttribute('href').substring(1);
+      const targetElement = document.getElementById(targetId);
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
 }
 
 /* ════════════════════════════════════════
