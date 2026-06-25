@@ -3571,7 +3571,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="lp-testi-author">
             <div class="lp-avatar" style="${pfpStyle}">${review.pfp_url ? '' : letter}</div>
             <div>
-              <div class="lp-tname">@${escapeHtml(uname)}</div>
+              <div class="lp-tname">${escapeHtml(uname)}</div>
               <div class="lp-trole">${sinceText}</div>
             </div>
           </div>
@@ -3836,7 +3836,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="u">
           <span class="av" style="${avStyle}">${avInner}</span>
           <div>
-            <div class="un">@${escapeHtml(uname)}</div>
+            <div class="un">${escapeHtml(uname)}</div>
             <div class="ms">${since}</div>
           </div>
         </div>
@@ -3858,7 +3858,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const al = a.username || 'user';
       return `<div class="faq-answer">
         <div class="faq-answer-text">${escapeHtml(a.answer_text)}</div>
-        <div class="faq-answer-meta">— @${escapeHtml(al)} · ${getMemberDuration(a.user_created_at||a.created_at)}</div>
+        <div class="faq-answer-meta">— ${escapeHtml(al)} · ${getMemberDuration(a.user_created_at||a.created_at)}</div>
       </div>`;
     }).join('')}</div>` : '';
 
@@ -3871,12 +3871,12 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="faq-card-user">
           <div class="faq-card-avatar" style="${avStyle}">${avInner}</div>
           <div>
-            <div class="faq-card-username">@${escapeHtml(uname)}</div>
+            <div class="faq-card-username">${escapeHtml(uname)}</div>
             <div class="faq-card-since">${since}</div>
           </div>
         </div>
         <div class="faq-card-q">${escapeHtml(faq.question_text)}</div>
-        <div class="faq-card-meta">@${escapeHtml(uname)} · ${since}</div>
+        <div class="faq-card-meta">${escapeHtml(uname)} · ${since}</div>
         <div class="faq-card-collapsed-foot">
           <span>💬 ${answerLabel}</span>
           <span class="faq-card-chevron">▾</span>
