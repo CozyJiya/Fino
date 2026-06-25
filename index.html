@@ -6,501 +6,13 @@
   <title>Fino — Smart Expense Tracker</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Sora:wght@700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&family=Sora:wght@700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<style>
-/* ── Landing nav: user state ── */
-.lp-user-nav {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.lp-user-nav.hidden { display: none !important; }
-.lp-btn-nav.hidden  { display: none !important; }
-
-.lp-btn-dashboard {
-  background: rgba(78,122,177,0.18);
-  border: 1px solid rgba(78,122,177,0.4);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
-  padding: 8px 18px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.18s;
-}
-.lp-btn-dashboard:hover {
-  background: rgba(78,122,177,0.35);
-}
-
-/* PFP avatar circle */
-.lp-pfp-wrap {
-  position: relative;
-}
-.lp-pfp-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #4e7ab1 0%, #b987af 100%);
-  color: #fff;
-  font-size: 15px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border: 2px solid rgba(255,255,255,0.15);
-  transition: border-color 0.18s, transform 0.15s;
-  user-select: none;
-  flex-shrink: 0;
-}
-.lp-pfp-avatar:hover {
-  border-color: rgba(185,135,175,0.7);
-  transform: scale(1.06);
-}
-
-/* Dropdown */
-.lp-pfp-dropdown {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  background: #0d1f3c;
-  border: 1px solid rgba(78,122,177,0.3);
-  border-radius: 10px;
-  min-width: 160px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.45);
-  z-index: 9999;
-  overflow: hidden;
-  animation: dropIn 0.15s ease;
-}
-.lp-pfp-dropdown.hidden { display: none; }
-
-@keyframes dropIn {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.lp-pfp-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 11px 16px;
-  background: none;
-  border: none;
-  color: #c8d8ee;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  text-align: left;
-  transition: background 0.15s, color 0.15s;
-}
-.lp-pfp-item:hover {
-  background: rgba(78,122,177,0.18);
-  color: #fff;
-}
-.lp-pfp-item svg { flex-shrink: 0; opacity: 0.8; }
-.lp-pfp-signout { color: #f87171; }
-.lp-pfp-signout:hover { background: rgba(239,68,68,0.12); color: #ef4444; }
-.lp-pfp-divider { height: 1px; background: rgba(78,122,177,0.2); margin: 2px 0; }
-
-/* ── Review user info strip ── */
-.review-user-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(78,122,177,0.08);
-  border: 1px solid rgba(78,122,177,0.2);
-  border-radius: 10px;
-  padding: 12px 14px;
-  margin-bottom: 16px;
-}
-.review-user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #4e7ab1 0%, #b987af 100%);
-  color: #fff;
-  font-size: 16px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  background-size: cover;
-  background-position: center;
-}
-.review-user-details { display: flex; flex-direction: column; gap: 2px; }
-.review-user-name { font-size: 14px; font-weight: 700; color: #c8d8ee; }
-.review-user-since { font-size: 12px; color: rgba(200,216,238,0.55); }
-
-/* ── FAQ section ── */
-.lp-faq-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  justify-content: center;
-  margin-bottom: 28px;
-}
-.lp-faq-viewall {
-  font-size: 14px;
-  font-weight: 600;
-  padding: 10px 20px;
-  border-radius: 10px;
-  cursor: pointer;
-}
-.lp-faq-preview {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  max-width: 760px;
-  margin: 0 auto;
-}
-
-/* ── FAQ Preview Wrapper — masonry/twitter-wall style ── */
-.faq-preview-wrapper {
-  position: relative;
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
-/* Masonry grid */
-.faq-preview-grid {
-  columns: 3;
-  column-gap: 18px;
-  position: relative;
-  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
-  mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
-  max-height: 480px;
-  overflow: hidden;
-  padding-bottom: 30px;
-}
-
-@media (max-width: 900px) { .faq-preview-grid { columns: 2; } }
-@media (max-width: 560px) { .faq-preview-grid { columns: 1; } }
-
-/* Gradient blur overlay — hidden; mask-image handles it */
-.faq-gradient-overlay { display: none; }
-
-/* More button */
-.faq-more-btn {
-  position: relative;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin: 28px auto 0;
-  padding: 12px 32px;
-  background: rgba(78,122,177,0.18);
-  border: 1px solid rgba(78,122,177,0.4);
-  border-radius: 10px;
-  color: #e8f0fb;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  letter-spacing: 0.01em;
-  transition: transform 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
-  width: fit-content;
-  margin-left: auto;
-  margin-right: auto;
-  box-shadow: 0 2px 12px rgba(78,122,177,0.12);
-}
-.faq-more-btn:hover {
-  background: rgba(78,122,177,0.32);
-  border-color: rgba(78,122,177,0.65);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(78,122,177,0.22);
-}
-.faq-more-btn svg {
-  width: 14px;
-  height: 14px;
-  transition: transform 0.3s;
-}
-.faq-more-btn:hover svg { transform: rotate(90deg); }
-
-/* FAQ Preview Cards — masonry twitter-wall tiles */
-.faq-preview-grid .faq-card {
-  break-inside: avoid;
-  background: rgba(13,31,60,0.75);
-  border: 1px solid rgba(78,122,177,0.22);
-  border-radius: 16px;
-  padding: 20px 22px;
-  margin-bottom: 18px;
-  display: inline-block;
-  width: 100%;
-  box-sizing: border-box;
-  transition: background 0.22s, border-color 0.22s, transform 0.22s, box-shadow 0.22s;
-  position: relative;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
-}
-.faq-preview-grid .faq-card::before { display: none; }
-.faq-preview-grid .faq-card:hover {
-  background: rgba(21,42,78,0.9);
-  border-color: rgba(78,122,177,0.5);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 28px rgba(0,0,0,0.32), 0 0 0 1px rgba(78,122,177,0.18);
-}
-
-/* Avatar + name row inside preview cards */
-.faq-preview-grid .faq-card-user {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-.faq-preview-grid .faq-card-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #4e7ab1 0%, #b987af 100%);
-  color: #fff;
-  font-size: 15px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 0 0 2px rgba(185,135,175,0.25);
-}
-.faq-preview-grid .faq-card-username {
-  font-size: 14px;
-  font-weight: 700;
-  color: #e8f0fb;
-  line-height: 1.25;
-}
-.faq-preview-grid .faq-card-since {
-  font-size: 11.5px;
-  color: rgba(200,216,238,0.4);
-  margin-top: 1px;
-}
-
-.faq-preview-grid .faq-card-q {
-  font-size: 15px;
-  font-weight: 500;
-  color: rgba(220,232,248,0.92);
-  line-height: 1.62;
-  margin-bottom: 16px;
-  letter-spacing: 0.01em;
-}
-.faq-preview-grid .faq-card-q::before { display: none; }
-.faq-preview-grid .faq-card-meta { display: none; }
-
-.faq-preview-grid .faq-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255,255,255,0.08);
-  margin-top: 0;
-}
-
-.faq-preview-grid .faq-answer-count {
-  font-size: 12px;
-  color: rgba(200,216,238,0.5);
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.faq-preview-grid .faq-answer-count::before { content: '💬'; font-size: 12px; }
-
-/* Like button — preview */
-.faq-preview-grid .btn-faq-like {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: none;
-  border: none;
-  color: rgba(200,216,238,0.5);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: color 0.15s, background 0.15s;
-}
-.faq-preview-grid .btn-faq-like:hover { color: #f43f5e; background: rgba(244,63,94,0.1); }
-.faq-preview-grid .btn-faq-like.liked { color: #f43f5e; }
-.faq-preview-grid .btn-faq-like svg { width: 14px; height: 14px; transition: transform 0.15s; fill: none; stroke: currentColor; stroke-width: 2; }
-.faq-preview-grid .btn-faq-like.liked svg { fill: #f43f5e; stroke: #f43f5e; }
-.faq-preview-grid .btn-faq-like:hover svg { transform: scale(1.2); }
-.faq-preview-grid .btn-faq-answer { display: none; }
-
-/* Loading state */
-.lp-loading {
-  text-align: center;
-  color: rgba(200,216,238,0.5);
-  padding: 40px;
-  font-size: 14px;
-}
-
-/* Like button — full FAQ page */
-.btn-faq-like {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: none;
-  border: 1px solid rgba(244,63,94,0.2);
-  color: rgba(200,216,238,0.6);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 5px 10px;
-  border-radius: 6px;
-  transition: color 0.15s, background 0.15s, border-color 0.15s;
-}
-.btn-faq-like:hover { color: #f43f5e; background: rgba(244,63,94,0.1); border-color: rgba(244,63,94,0.4); }
-.btn-faq-like.liked { color: #f43f5e; border-color: rgba(244,63,94,0.4); background: rgba(244,63,94,0.08); }
-.btn-faq-like.liked svg { fill: #f43f5e; stroke: #f43f5e; }
-.btn-faq-like svg { width: 13px; height: 13px; transition: transform 0.15s; fill: none; stroke: currentColor; stroke-width: 2; }
-.btn-faq-like:hover svg { transform: scale(1.15); }
-
-/* FAQ card */
-.faq-card {
-  background: rgba(13,31,60,0.7);
-  border: 1px solid rgba(78,122,177,0.2);
-  border-radius: 14px;
-  padding: 20px 22px;
-  transition: border-color 0.2s;
-}
-.faq-card:hover { border-color: rgba(78,122,177,0.45); }
-.faq-card-q {
-  font-size: 15px;
-  font-weight: 700;
-  color: #c8d8ee;
-  margin-bottom: 6px;
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-.faq-card-q::before { content: "Q"; color: #b987af; font-size: 12px; font-weight: 800; background: rgba(185,135,175,0.15); border-radius: 4px; padding: 2px 6px; flex-shrink: 0; margin-top: 1px; }
-.faq-card-meta { font-size: 12px; color: rgba(200,216,238,0.5); margin-bottom: 10px; }
-.faq-card-answers { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-.faq-answer {
-  background: rgba(78,122,177,0.07);
-  border-left: 3px solid rgba(78,122,177,0.4);
-  border-radius: 0 8px 8px 0;
-  padding: 10px 14px;
-}
-.faq-answer-text { font-size: 13px; color: #c8d8ee; margin-bottom: 4px; }
-.faq-answer-meta { font-size: 11px; color: rgba(200,216,238,0.45); }
-.faq-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(78,122,177,0.12);
-}
-.faq-answer-count { font-size: 12px; color: rgba(200,216,238,0.5); }
-.btn-faq-answer {
-  background: rgba(78,122,177,0.15);
-  border: 1px solid rgba(78,122,177,0.3);
-  color: #c8d8ee;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 5px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.btn-faq-answer:hover { background: rgba(78,122,177,0.3); }
-
-/* ── FAQ Full Page ── */
-#page-faq { min-height: 100vh; background: #07152a; }
-.faq-page-inner {
-  max-width: 780px;
-  margin: 0 auto;
-  padding: 40px 24px 80px;
-}
-.faq-page-title {
-  font-family: 'Sora', sans-serif;
-  font-size: 32px;
-  font-weight: 800;
-  color: #fff;
-  margin-bottom: 8px;
-}
-.faq-page-sub { font-size: 15px; color: rgba(200,216,238,0.6); margin-bottom: 28px; }
-.faq-search-wrap {
-  position: relative;
-  margin-bottom: 20px;
-}
-.faq-search-input {
-  width: 100%;
-  background: rgba(13,31,60,0.8);
-  border: 1px solid rgba(78,122,177,0.3);
-  border-radius: 12px;
-  color: #c8d8ee;
-  font-size: 15px;
-  padding: 13px 18px 13px 46px;
-  outline: none;
-  box-sizing: border-box;
-  transition: border-color 0.2s;
-}
-.faq-search-input:focus { border-color: rgba(78,122,177,0.7); }
-.faq-search-icon {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: rgba(200,216,238,0.4);
-  pointer-events: none;
-}
-.faq-page-actions { margin-bottom: 24px; }
-.faq-list { display: flex; flex-direction: column; gap: 14px; }
-.faq-no-results { text-align: center; color: rgba(200,216,238,0.5); padding: 40px; }
-
-/* FAQ question preview in answer modal */
-.faq-question-preview {
-  background: rgba(78,122,177,0.08);
-  border: 1px solid rgba(78,122,177,0.18);
-  border-radius: 8px;
-  padding: 12px 14px;
-  font-size: 14px;
-  color: #c8d8ee;
-  margin-bottom: 14px;
-  font-style: italic;
-}
-
-/* ── Reviews layout ── */
-.lp-reviews-empty {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 56px 20px;
-  text-align: center;
-  color: rgba(200,216,238,0.55);
-  gap: 10px;
-}
-.lp-reviews-empty-icon { font-size: 36px; line-height: 1; }
-.lp-reviews-empty-title { font-size: 18px; font-weight: 600; color: rgba(200,216,238,0.7); margin: 0; }
-.lp-reviews-empty-sub   { font-size: 14px; margin: 0; }
-
-/* 1 review: center it */
-.lp-testi-grid.lp-reviews-single {
-  display: flex;
-  justify-content: center;
-}
-.lp-reviews-single .lp-testi {
-  max-width: 520px;
-  width: 100%;
-}
-
-/* 2 reviews: two columns, centered */
-.lp-testi-grid.lp-reviews-pair {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 480px));
-  justify-content: center;
-  gap: 24px;
-}
-</style>
 </head>
 <body>
 
@@ -509,32 +21,37 @@
 ═══════════════════════════════════════ -->
 <div id="page-landing">
 
+
+<div id="prog"></div>
+<div class="aurora"><span class="a1"></span><span class="a2"></span><span class="a3"></span><span class="a4"></span></div>
+<canvas id="stars"></canvas>
+
+<div class="shell">
+
   <!-- NAV -->
-  <nav class="lp-nav">
-    <a href="#" class="lp-logo">
-      <span class="lp-logo-dot"></span>Fino
-    </a>
-    <div class="lp-nav-links">
-      <a href="#lp-features">Features</a>
-      <a href="#lp-how">How It Works</a>
-      <a href="#" onclick="showPricingPage(event)">Pricing</a>
-      <a href="#lp-contact">Contact</a>
-      <a href="#" id="lp-nav-faq" onclick="showFAQPage(event)">Community</a>
-      <!-- Signed-out: show Sign In button -->
-      <button class="lp-btn-nav" id="lp-btn-launch" data-action="login">Sign In →</button>
-      <!-- Signed-in: show Dashboard + pfp dropdown (hidden by default) -->
+  <nav class="nav" id="nav">
+    <a href="#top" class="logo"><span class="dot"></span>Fino</a>
+    <div class="nav-links">
+      <a href="#features" class="lnk">Features</a>
+      <a href="#how" class="lnk">How it works</a>
+      <a href="#community" class="lnk" onclick="showFAQPage(event)">Community</a>
+      <a href="#reviews" class="lnk">Reviews</a>
+      <a href="#pricing" class="lnk" onclick="showPricingPage(event)">Pricing</a>
+      <a href="#contact" class="lnk">Contact</a>
+      <a href="#" class="btn btn-fill" id="lp-btn-launch" onclick="event.preventDefault();goToLogin()">Sign in <span class="arr">→</span></a>
+      <!-- Signed-in: Dashboard + pfp dropdown (hidden by default) -->
       <div class="lp-user-nav hidden" id="lp-user-nav">
         <button class="lp-btn-nav lp-btn-dashboard" id="lp-btn-dashboard">Dashboard</button>
         <div class="lp-pfp-wrap" id="lp-pfp-wrap">
           <div class="lp-pfp-avatar" id="lp-pfp-avatar">A</div>
           <div class="lp-pfp-dropdown hidden" id="lp-pfp-dropdown">
             <button class="lp-pfp-item" id="lp-pfp-account">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
               Account
             </button>
             <div class="lp-pfp-divider"></div>
             <button class="lp-pfp-item lp-pfp-signout" id="lp-pfp-signout">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
               Sign Out
             </button>
           </div>
@@ -544,291 +61,197 @@
   </nav>
 
   <!-- HERO -->
-  <section class="lp-hero" id="lp-home">
-    <div class="lp-hero-glow"></div>
-    <div class="lp-hero-glow2"></div>
-    <div class="lp-hero-inner">
-
-      <!-- Left copy -->
-      <div class="lp-hero-copy">
-        <div class="lp-label-badge"><span class="lp-pulse-dot"></span>Smart Personal Finance</div>
-        <h1 class="lp-h1">Every Rupee,<br /><em>Perfectly</em> Tracked.</h1>
-        <p class="lp-hero-sub">Fino gives you a real-time picture of your spending, savings, and trends — with beautiful charts, smart categories, and PDF reports you can actually use.</p>
-        <div class="lp-hero-btns">
-          <button class="lp-btn-primary" id="lp-btn-getstarted">Get Started Free</button>
-          <a href="#lp-features" class="lp-btn-outline">Explore Features</a>
+  <header class="hero" id="top">
+    <div class="hero-grid">
+      <div>
+        <div class="eyebrow reveal"><span class="d"></span>Smart personal finance</div>
+        <h1 class="h1 reveal">Every rupee,<br><span class="grad">perfectly</span> tracked.</h1>
+        <p class="hero-sub reveal">A real-time picture of your spending, savings and trends — beautiful charts, smart categories, and PDF reports you'll actually use.</p>
+        <div class="hero-btns reveal">
+          <a href="#" class="btn btn-fill btn-lg" onclick="event.preventDefault();goToSignup()">Get started free <span class="arr">→</span></a>
+          <a href="#features" class="btn btn-ghost btn-lg">Explore features</a>
         </div>
-        <div class="lp-hero-stats">
-          <div class="lp-hstat"><span class="lp-hstat-num">₹0</span><span class="lp-hstat-lbl">Always Free Plan</span></div>
-          <div class="lp-hstat"><span class="lp-hstat-num">5 sec</span><span class="lp-hstat-lbl">To log a transaction</span></div>
-          <div class="lp-hstat"><span class="lp-hstat-num">100%</span><span class="lp-hstat-lbl">Your data, always</span></div>
+        <div class="hero-stats reveal">
+          <div class="hstat"><div class="num"><span data-count="0" data-pre="₹">₹0</span></div><div class="lbl">Always-free plan</div></div>
+          <div class="sep"></div>
+          <div class="hstat"><div class="num"><span data-count="5" data-suf="s">5s</span></div><div class="lbl">To log a transaction</div></div>
+          <div class="sep"></div>
+          <div class="hstat"><div class="num"><span data-count="100" data-suf="%">100%</span></div><div class="lbl">Your data, always</div></div>
         </div>
       </div>
 
-      <!-- Right: mini app preview -->
-      <div class="lp-preview" aria-hidden="true">
-        <div class="lp-preview-bar">
-          <span class="lp-dot lp-dot-r"></span>
-          <span class="lp-dot lp-dot-y"></span>
-          <span class="lp-dot lp-dot-g"></span>
-        </div>
-        <div class="lp-preview-body">
-          <div class="lp-mini-stats">
-            <div class="lp-ms"><div class="lp-ms-l">Net Balance</div><div class="lp-ms-v lp-green">₹18,400</div></div>
-            <div class="lp-ms"><div class="lp-ms-l">Monthly Net</div><div class="lp-ms-v lp-red">−₹6,230</div></div>
-            <div class="lp-ms"><div class="lp-ms-l">Daily Avg</div><div class="lp-ms-v">₹207</div></div>
-          </div>
-          <div class="lp-mini-chart-card">
-            <div class="lp-mini-chart-title">Daily Spending — This Week</div>
-            <div class="lp-mini-bars">
-              <div class="lp-bar" style="height:35%"></div>
-              <div class="lp-bar" style="height:60%"></div>
-              <div class="lp-bar" style="height:25%"></div>
-              <div class="lp-bar lp-bar-active" style="height:82%"></div>
-              <div class="lp-bar" style="height:50%"></div>
-              <div class="lp-bar" style="height:44%"></div>
-              <div class="lp-bar" style="height:58%"></div>
-            </div>
-          </div>
-          <div class="lp-mini-txns">
-            <div class="lp-txn">
-              <div class="lp-txn-left">
-                <div class="lp-txn-icon" style="background:rgba(52,211,153,0.12)">🛒</div>
-                <div><div class="lp-txn-name">Groceries</div><div class="lp-txn-cat">Food</div></div>
+      <div class="mock-wrap reveal">
+        <div style="position:relative;" id="tiltWrap">
+          <div class="chip chip-1"><span class="e">📈</span> Savings up 18%</div>
+          <div class="chip chip-2"><span class="e">⚡</span> Auto-logged salary</div>
+          <div class="mock" id="mock">
+            <div class="mock-bar"><i style="background:#ef4444"></i><i style="background:#f59e0b"></i><i style="background:var(--mint)"></i><span style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:600">fino · dashboard</span></div>
+            <div class="mock-body">
+              <div class="mock-stats">
+                <div class="mock-stat"><div class="k">Net balance</div><div class="v green"><span data-count="18400" data-pre="₹" data-comma="1">₹18,400</span></div></div>
+                <div class="mock-stat"><div class="k">Monthly net</div><div class="v redc">−<span data-count="6230" data-pre="₹" data-comma="1">₹6,230</span></div></div>
+                <div class="mock-stat"><div class="k">Daily avg</div><div class="v"><span data-count="207" data-pre="₹">₹207</span></div></div>
               </div>
-              <div class="lp-txn-amt lp-red">−₹840</div>
-            </div>
-            <div class="lp-txn">
-              <div class="lp-txn-left">
-                <div class="lp-txn-icon" style="background:rgba(78,122,177,0.15)">💼</div>
-                <div><div class="lp-txn-name">Salary</div><div class="lp-txn-cat">Income</div></div>
+              <div class="mock-mid">
+                <div class="mock-card"><div class="t">This week</div>
+                  <div class="bars">
+                    <i style="height:38%;background:linear-gradient(180deg,var(--blue),transparent);animation-delay:0s"></i>
+                    <i style="height:62%;background:linear-gradient(180deg,var(--blueL),transparent);animation-delay:.2s"></i>
+                    <i style="height:30%;background:linear-gradient(180deg,var(--blue),transparent);animation-delay:.4s"></i>
+                    <i style="height:92%;background:linear-gradient(180deg,var(--violet),transparent);animation-delay:.6s"></i>
+                    <i style="height:54%;background:linear-gradient(180deg,var(--blue),transparent);animation-delay:.8s"></i>
+                    <i style="height:70%;background:linear-gradient(180deg,var(--blueL),transparent);animation-delay:1s"></i>
+                  </div>
+                </div>
+                <div class="mock-card donut">
+                  <svg width="92" height="92" viewBox="0 0 80 80" style="transform:rotate(-90deg)">
+                    <circle cx="40" cy="40" r="30" fill="none" stroke="rgba(78,122,177,.14)" stroke-width="11"/>
+                    <circle id="donutSeg" cx="40" cy="40" r="30" fill="none" stroke="var(--lav)" stroke-width="11" stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+                    <text x="40" y="45" text-anchor="middle" fill="#fff" font-size="13" font-weight="700" font-family="Space Grotesk" transform="rotate(90 40 40)">68%</text>
+                  </svg>
+                </div>
               </div>
-              <div class="lp-txn-amt lp-green">+₹35,000</div>
-            </div>
-            <div class="lp-txn">
-              <div class="lp-txn-left">
-                <div class="lp-txn-icon" style="background:rgba(206,181,212,0.12)">🚌</div>
-                <div><div class="lp-txn-name">Transport</div><div class="lp-txn-cat">Travel</div></div>
-              </div>
-              <div class="lp-txn-amt lp-red">−₹120</div>
+              <div class="txn"><div class="l"><span class="ic" style="background:rgba(52,211,153,.12)">🛒</span><div><div class="nm">Groceries</div><div class="ct">Food</div></div></div><div class="am redc">−₹840</div></div>
+              <div class="txn"><div class="l"><span class="ic" style="background:rgba(78,122,177,.16)">💼</span><div><div class="nm">Salary</div><div class="ct">Income</div></div></div><div class="am green">+₹35,000</div></div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </section>
+  </header>
+
+  <!-- MARQUEE -->
+  <div class="marquee">
+    <div class="track">
+      <div class="grp"><span>Live dashboard</span><i>✦</i><span>Smart categories</span><i>✦</i><span>Visual charts</span><i>✦</i><span>PDF reports</span><i>✦</i><span>Secure by design</span><i>✦</i><span>Mobile-first</span><i>✦</i></div>
+      <div class="grp" aria-hidden="true"><span>Live dashboard</span><i>✦</i><span>Smart categories</span><i>✦</i><span>Visual charts</span><i>✦</i><span>PDF reports</span><i>✦</i><span>Secure by design</span><i>✦</i><span>Mobile-first</span><i>✦</i></div>
+    </div>
+  </div>
 
   <!-- FEATURES -->
-  <section class="lp-section lp-section-alt" id="lp-features">
-    <div class="lp-container">
-      <div class="lp-section-label lp-center">What's Inside</div>
-      <h2 class="lp-h2 lp-center">Built for how you actually spend</h2>
-      <p class="lp-section-sub lp-center">No spreadsheets. No confusing dashboards. Just a clean, fast tool that stays out of your way.</p>
-      <div class="lp-feat-grid">
-        <div class="lp-feat-card lp-reveal">
-          <div class="lp-feat-icon">📊</div>
-          <div class="lp-feat-title">Live Dashboard</div>
-          <p class="lp-feat-desc">Net balance, monthly net, and daily average the moment you open the app. Always up to date.</p>
-        </div>
-        <div class="lp-feat-card lp-reveal">
-          <div class="lp-feat-icon">📈</div>
-          <div class="lp-feat-title">Visual Charts</div>
-          <p class="lp-feat-desc">Bar charts for daily and monthly trends, plus donut charts for category breakdowns. See where your money goes.</p>
-        </div>
-        <div class="lp-feat-card lp-reveal">
-          <div class="lp-feat-icon">🏷️</div>
-          <div class="lp-feat-title">Smart Categories</div>
-          <p class="lp-feat-desc">Tag transactions instantly — Food, Travel, Entertainment, Health, and more. One tap, always organised.</p>
-        </div>
-        <div class="lp-feat-card lp-reveal">
-          <div class="lp-feat-icon">📄</div>
-          <div class="lp-feat-title">PDF Reports</div>
-          <p class="lp-feat-desc">Export beautiful monthly or yearly reports as PDF — with inline bar charts, totals, and full transaction history.</p>
-        </div>
-        <div class="lp-feat-card lp-reveal">
-          <div class="lp-feat-icon">🔐</div>
-          <div class="lp-feat-title">Secure Auth</div>
-          <p class="lp-feat-desc">Email and password sign-in. Your data lives in your own Supabase instance, protected by row-level security.</p>
-        </div>
-        <div class="lp-feat-card lp-reveal">
-          <div class="lp-feat-icon">📱</div>
-          <div class="lp-feat-title">Mobile-First</div>
-          <p class="lp-feat-desc">Fully responsive from 320px to 4K. The bottom nav adapts so your thumb always reaches everything.</p>
-        </div>
-      </div>
+  <section class="section" id="features">
+    <div class="head reveal">
+      <span class="kick">What's inside</span>
+      <h2 class="h2">Built for how you <em>actually</em> spend</h2>
+      <p class="sub">No spreadsheets, no clutter — a clean, fast tool that shows you everything at a glance.</p>
+    </div>
+    <div class="feat-grid stagger">
+      <div class="feat"><div class="ico">📊</div><h3>Live dashboard</h3><p>Net balance, monthly net and daily average the moment you open the app — always up to date.</p></div>
+      <div class="feat"><div class="ico">📈</div><h3>Visual charts</h3><p>Donut breakdowns by category. See exactly where your money goes at a glance.</p></div>
+      <div class="feat"><div class="ico">🏷️</div><h3>Smart categories</h3><p>Tag transactions instantly — Food, Travel, Health, Shopping and more.</p></div>
+      <div class="feat"><div class="ico">📄</div><h3>PDF reports</h3><p>Export monthly or yearly reports with inline charts, totals and full history.</p></div>
+      <div class="feat"><div class="ico">🔐</div><h3>Secure by design</h3><p>Your data lives in your own Supabase instance, protected by row-level security.</p></div>
+      <div class="feat"><div class="ico">📱</div><h3>Mobile-first</h3><p>Fully responsive from 320px to 4K. The bottom nav keeps everything in thumb's reach.</p></div>
     </div>
   </section>
 
   <!-- HOW IT WORKS -->
-  <section class="lp-section" id="lp-how">
-    <div class="lp-container">
-      <div class="lp-section-label lp-center">Simple Process</div>
-      <h2 class="lp-h2 lp-center">Up and running in minutes</h2>
-      <p class="lp-section-sub lp-center">No setup wizards. No migrations. You're tracking expenses before your chai cools down.</p>
-      <div class="lp-steps">
-        <div class="lp-step lp-reveal">
-          <div class="lp-step-num">STEP 01</div>
-          <div class="lp-step-circle">👤</div>
-          <div class="lp-step-title">Create Your Account</div>
-          <p class="lp-step-desc">Sign up with your email. Your private dashboard is ready instantly.</p>
-        </div>
-        <div class="lp-step lp-reveal">
-          <div class="lp-step-num">STEP 02</div>
-          <div class="lp-step-circle">➕</div>
-          <div class="lp-step-title">Log Transactions</div>
-          <p class="lp-step-desc">Add income or expenses in under 5 seconds. Pick a category, done.</p>
-        </div>
-        <div class="lp-step lp-reveal">
-          <div class="lp-step-num">STEP 03</div>
-          <div class="lp-step-circle">📊</div>
-          <div class="lp-step-title">See Your Picture</div>
-          <p class="lp-step-desc">Charts and stats update instantly. Your financial story, live.</p>
-        </div>
-        <div class="lp-step lp-reveal">
-          <div class="lp-step-num">STEP 04</div>
-          <div class="lp-step-circle">📄</div>
-          <div class="lp-step-title">Export Reports</div>
-          <p class="lp-step-desc">Download a clean PDF anytime. Share it or save it for taxes.</p>
-        </div>
+  <section class="section" id="how">
+    <div class="head reveal">
+      <span class="kick">Simple process</span>
+      <h2 class="h2">Up and running in <em>minutes</em></h2>
+      <p class="sub">No setup wizards, no migrations. You're tracking before your chai cools down.</p>
+    </div>
+    <div class="how" id="howWrap">
+      <div class="how-line"></div><div class="how-fill" id="howFill"></div>
+      <div class="how-grid">
+        <div class="step"><div class="node">👤</div><div class="n">STEP 01</div><h4>Create your account</h4><p>Sign up with your email. Your private dashboard is ready instantly.</p></div>
+        <div class="step"><div class="node">➕</div><div class="n">STEP 02</div><h4>Log transactions</h4><p>Add income or expenses in under five seconds. Pick a category, done.</p></div>
+        <div class="step"><div class="node">📊</div><div class="n">STEP 03</div><h4>See your picture</h4><p>Charts and stats update instantly. Your financial story, live.</p></div>
+        <div class="step"><div class="node">📄</div><div class="n">STEP 04</div><h4>Export reports</h4><p>Download a clean PDF anytime. Share it or save it for taxes.</p></div>
       </div>
     </div>
   </section>
 
-  <!-- TESTIMONIALS / REVIEWS -->
-  <section class="lp-section" id="lp-testimonials">
-    <div class="lp-container">
-      <div class="lp-section-label lp-center">Early Feedback</div>
-      <h2 class="lp-h2 lp-center">What our users are saying</h2>
-      <p class="lp-section-sub lp-center">Real reviews from people tracking their finances with Fino.</p>
-      
-      <!-- Add Review Button -->
-      <div class="lp-add-review-wrap">
-        <button class="lp-btn-add-review" id="btn-add-review">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          Add Your Review
-        </button>
+  <!-- COMMUNITY -->
+  <section class="section" id="community">
+    <div class="head reveal">
+      <span class="kick">Community</span>
+      <h2 class="h2">Questions from <em>real</em> users</h2>
+      <p class="sub">Ask anything about Fino and get answers from the community. The most-liked questions rise to the top.</p>
+    </div>
+    <div class="faq-preview-wrapper">
+      <div class="faq-preview-grid" id="faq-preview-grid">
+        <div class="lp-loading">Loading questions...</div>
       </div>
-
-      <!-- Reviews Grid -->
-      <div class="lp-testi-grid" id="reviews-grid">
-        <div class="lp-reviews-empty">
-          <div class="lp-reviews-empty-icon">💬</div>
-          <p>Loading reviews...</p>
-        </div>
-      </div>
+      <div class="faq-gradient-overlay"></div>
+    </div>
+    <div class="center-btn reveal">
+      <button class="btn btn-fill btn-lg" onclick="showFAQPage(event)">View all questions <span class="arr">→</span></button>
     </div>
   </section>
-
-  <!-- CTA BAND -->
-  <div class="lp-cta-band">
-    <div class="lp-section-label lp-center" style="margin-bottom:14px">Get Started Today</div>
-    <h2 class="lp-h2 lp-center">Your finances deserve a better view.</h2>
-    <p class="lp-cta-sub">Join hundreds of people already tracking smarter with Fino.</p>
-    <button class="lp-btn-primary" onclick="goToSignup()">Start Tracking Free →</button>
-  </div>
 
   <!-- CONTACT -->
-  <section class="lp-section lp-section-alt" id="lp-contact">
-    <div class="lp-container lp-contact-wrap">
-      <div class="lp-section-label lp-center">Get In Touch</div>
-      <h2 class="lp-h2 lp-center">Send us a message</h2>
-      <p class="lp-section-sub lp-center">Questions about features, pricing, or integration? We reply within 24 hours.</p>
-      <!--
-        EMAIL SETUP:
-        1. Go to https://formspree.io → sign up free
-        2. Create a form → copy your endpoint (e.g. https://formspree.io/f/xyzabcde)
-        3. Replace the action URL below with your endpoint
-        Messages will arrive directly in your email inbox!
-      -->
-      <form class="lp-contact-form" id="lp-form" action="https://formspree.io/f/YOUR_FORMSPREE_ID" method="POST">
-        <div class="lp-form-row">
-          <div class="lp-field-wrap">
-            <label class="lp-field-label" for="lp-name">Your Name</label>
-            <input class="lp-field" type="text" id="lp-name" name="name" placeholder="Priya Sharma" required />
-          </div>
-          <div class="lp-field-wrap">
-            <label class="lp-field-label" for="lp-email">Email Address</label>
-            <input class="lp-field" type="email" id="lp-email" name="email" placeholder="you@example.com" required />
-          </div>
+  <section class="section" id="contact">
+    <div class="contact-grid">
+      <div class="cinfo reveal">
+        <span class="kick">Get in touch</span>
+        <h2 class="h2" style="text-align:left">Questions? <em>We're listening.</em></h2>
+        <p class="sub" style="max-width:380px">Questions about features, pricing, or integration? Drop us a line and we'll usually reply within a day.</p>
+        <div class="row"><div class="ic" style="background:rgba(78,122,177,.13);border:1px solid var(--line2)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blueL)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg></div><div><div class="k">Email us</div><div class="v">hello@fino.app</div></div></div>
+        <div class="row"><div class="ic" style="background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--mint)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div><div class="k">Response time</div><div class="v">Within 24 hours</div></div></div>
+        <div class="row"><div class="ic" style="background:rgba(206,181,212,.1);border:1px solid rgba(206,181,212,.25)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--lav)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg></div><div><div class="k">Ready to start?</div><div class="v"><a href="#"  onclick="event.preventDefault();goToLogin()">Go to sign in →</a></div></div></div>
+      </div>
+      <form class="form reveal" id="contactForm">
+        <div class="f2">
+          <div class="field"><label>Your name</label><input name="name" required placeholder="Priya Sharma" /></div>
+          <div class="field"><label>Email</label><input name="email" type="email" required placeholder="you@example.com" /></div>
         </div>
-        <div class="lp-field-wrap">
-          <label class="lp-field-label" for="lp-subject">Subject</label>
-          <input class="lp-field" type="text" id="lp-subject" name="subject" placeholder="Question about Pro plan" required />
-        </div>
-        <div class="lp-field-wrap">
-          <label class="lp-field-label" for="lp-message">Message</label>
-          <textarea class="lp-field lp-textarea" id="lp-message" name="message" placeholder="Tell us what you're looking for..." required></textarea>
-        </div>
-        <div id="lp-form-status"></div>
-        <button type="submit" class="lp-btn-primary lp-submit-btn" id="lp-submit">Send Message</button>
-        <p class="lp-form-note">We don't spam. Your email is only used to reply to you.</p>
+        <div class="field"><label>Subject</label><input name="subject" required placeholder="Question about the Pro plan" /></div>
+        <div class="field"><label>Message</label><textarea name="message" required placeholder="Tell us what you're looking for..."></textarea></div>
+        <div class="ok" id="okMsg">✓ Message sent! We'll get back to you soon.</div>
+        <button type="submit" class="btn btn-fill" style="justify-content:center;padding:15px;font-size:15px">Send message</button>
+        <p style="font-size:11.5px;color:rgba(125,159,192,.6);text-align:center">We don't spam. Your email is only used to reply to you.</p>
       </form>
     </div>
   </section>
 
-  <!-- FAQ PREVIEW SECTION — after Contact -->
-  <section class="lp-section" id="lp-faq-preview" style="background: #07152a;">
-    <div class="lp-container">
-      <div class="lp-section-label lp-center">Community Help</div>
-      <h2 class="lp-h2 lp-center">Questions from Our Users</h2>
-      <p class="lp-section-sub lp-center">Real questions answered by the Fino community.</p>
+  <!-- REVIEWS -->
+  <section class="section" id="reviews">
+    <div class="head reveal">
+      <span class="kick">Early feedback</span>
+      <h2 class="h2">What our users <em>are saying</em></h2>
+      <p class="sub">Real reviews from people tracking their finances with Fino. Sign in to share yours.</p>
+    </div>
+    <div class="lp-add-review-wrap reveal" style="display:flex;justify-content:center;margin-bottom:30px;">
+      <button class="btn btn-fill" id="btn-add-review">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Add your review
+      </button>
+    </div>
+    <div class="lp-testi-grid" id="reviews-grid">
+      <div class="lp-reviews-empty"><div class="lp-reviews-empty-icon">💬</div><p class="lp-reviews-empty-title">Loading reviews...</p></div>
+    </div>
+  </section>
 
-      <div class="faq-preview-wrapper">
-        <div class="faq-preview-grid" id="faq-preview-grid">
-          <div class="lp-loading">Loading questions...</div>
-        </div>
-        <div class="faq-gradient-overlay"></div>
-        <button class="faq-more-btn" onclick="showFAQPage(event)">
-          <span>View All Questions</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-        </button>
-      </div>
+  <!-- CTA -->
+  <section class="cta">
+    <div class="reveal" style="max-width:760px;margin:0 auto;position:relative">
+      <h2 class="h2">Your finances deserve a <em style="background:linear-gradient(100deg,var(--blueL),var(--lav) 50%,var(--mint));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">better view.</em></h2>
+      <p class="sub" style="max-width:480px;margin:0 auto 34px">Join hundreds of people already tracking smarter with Fino. Free forever, no card required.</p>
+      <a href="#" class="btn btn-fill btn-lg" onclick="event.preventDefault();goToSignup()">Start tracking free <span class="arr">→</span></a>
     </div>
   </section>
 
   <!-- FOOTER -->
-  <footer class="lp-footer">
-    <div class="lp-footer-inner">
-      <div class="lp-footer-brand">
-        <span class="lp-logo"><span class="lp-logo-dot"></span>Fino</span>
-        <p>A smart expense tracker built during an AI internship at Riamona Luxury and Fashion Brands. Powered by Supabase &amp; Chart.js.</p>
+  <footer class="footer">
+    <div class="inner">
+      <div style="max-width:280px">
+        <div class="logo" style="margin-bottom:12px"><span class="dot"></span>Fino</div>
+        <p>A smart expense tracker that gives you a real-time picture of your money. Beautiful charts, smart categories, PDF reports.</p>
       </div>
-      <div class="lp-footer-links">
-        <div class="lp-fcol">
-          <h4>Product</h4>
-          <a href="#lp-features">Features</a>
-          <a href="#lp-how">How It Works</a>
-          <a href="#" onclick="showPricingPage(event)">Pricing</a>
-        </div>
-        <div class="lp-fcol">
-          <h4>Company</h4>
-          <a href="#lp-testimonials">Reviews</a>
-          <a href="#" onclick="showFAQPage(event)">Community Q&A</a>
-          <a href="#lp-contact">Contact</a>
-        </div>
-        <div class="lp-fcol">
-          <h4>Tech Stack</h4>
-          <a href="https://supabase.com" target="_blank" rel="noopener">Supabase</a>
-          <a href="https://www.chartjs.org" target="_blank" rel="noopener">Chart.js</a>
-          <a href="#" target="_blank" rel="noopener">jsPDF</a>
-        </div>
+      <div style="display:flex;gap:56px;flex-wrap:wrap">
+        <div class="fcol"><h5>Product</h5><a href="#features">Features</a><a href="#how">How it works</a><a href="#pricing" onclick="showPricingPage(event)">Pricing</a></div>
+        <div class="fcol"><h5>Company</h5><a href="#community" onclick="showFAQPage(event)">Community</a><a href="#contact">Contact</a><a href="#"  onclick="event.preventDefault();goToLogin()">Sign in</a></div>
       </div>
     </div>
-    <div class="lp-footer-bottom">
-      <p>© 2026 Fino — Built with ❤️ at Riamona Internship</p>
-      <div class="lp-tech-badges">
-        <span class="lp-badge">Supabase</span>
-        <span class="lp-badge">Chart.js</span>
-        <span class="lp-badge">Vanilla JS</span>
-      </div>
+    <div class="fbottom">
+      <span>© 2026 Fino — Every rupee, perfectly tracked.</span>
+      <div class="badges"><span class="tag">Supabase</span><span class="tag">Chart.js</span><span class="tag">Vanilla JS</span></div>
     </div>
   </footer>
+
+</div>
 
   <!-- Add Review Modal -->
   <div class="modal-backdrop hidden" id="review-modal">
@@ -871,6 +294,7 @@
   </div>
 
 </div><!-- /page-landing -->
+
 
 <!-- ═══════════════════════════════════════
      FAQ FULL PAGE
@@ -984,16 +408,16 @@
       <div class="lp-plan">
         <div class="lp-plan-name">Free</div>
         <div class="lp-plan-price"><sup>₹</sup>0<span>/month</span></div>
-        <p class="lp-plan-desc">For individuals getting started with personal finance tracking.</p>
+        <p class="lp-plan-desc">The Manual Tracker — everything you need to visualize your money, entered by you.</p>
         <div class="lp-plan-divider"></div>
         <ul class="lp-plan-feats">
-          <li>Unlimited transactions</li>
-          <li>Live dashboard &amp; stats</li>
+          <li>Transaction tracking (up to 150/month)</li>
+          <li>Live dashboard &amp; core stats</li>
           <li>Daily &amp; monthly bar charts</li>
           <li>Category breakdown donut chart</li>
-          <li>Expense history table</li>
-          <li class="lp-na">PDF report export</li>
-          <li class="lp-na">Yearly trend analysis</li>
+          <li>PDF download</li>
+          <li class="lp-na">Auto subscription updates</li>
+          <li class="lp-na">Bank account integration</li>
         </ul>
         <button class="lp-plan-btn lp-plan-btn-outline" onclick="goToSignup()">Get Started Free</button>
       </div>
@@ -1002,33 +426,33 @@
         <div class="lp-plan-badge">Most Popular</div>
         <div class="lp-plan-name" style="margin-top:4px">Pro</div>
         <div class="lp-plan-price"><sup>₹</sup>149<span>/month</span></div>
-        <p class="lp-plan-desc">For individuals who want full control and shareable reports.</p>
+        <p class="lp-plan-desc">The Smart Organizer — back up your data and automate your fixed costs.</p>
         <div class="lp-plan-divider"></div>
         <ul class="lp-plan-feats">
           <li>Everything in Free</li>
-          <li>PDF export (monthly &amp; yearly)</li>
-          <li>Inline SVG charts in PDFs</li>
-          <li>Advanced category insights</li>
+          <li>Auto subscription updates (Netflix, Spotify, gym &amp; more)</li>
+          <li>PDF export (monthly &amp; yearly with graphs)</li>
           <li>Data export (CSV)</li>
-          <li class="lp-na">Team accounts</li>
-          <li class="lp-na">Custom categories</li>
+          <li>Advanced category insights</li>
+          <li class="lp-na">Bank account integration</li>
+          <li class="lp-na">Team / family accounts</li>
         </ul>
         <button class="lp-plan-btn lp-plan-btn-fill" onclick="hidePricingPage(event);document.querySelector('#lp-contact').scrollIntoView({behavior:'smooth'});">Get Pro Access</button>
       </div>
 
       <div class="lp-plan">
-        <div class="lp-plan-name">Team</div>
+        <div class="lp-plan-name">Premium</div>
         <div class="lp-plan-price"><sup>₹</sup>499<span>/month</span></div>
-        <p class="lp-plan-desc">For small businesses and households managing shared finances.</p>
+        <p class="lp-plan-desc">The Hands-Off Collaborator — the app does the heavy lifting, with group tracking.</p>
         <div class="lp-plan-divider"></div>
         <ul class="lp-plan-feats">
           <li>Everything in Pro</li>
-          <li>Up to 5 team accounts</li>
-          <li>Custom categories</li>
+          <li>Bank account integration (banks/UPI via Account Aggregator)</li>
+          <li>Up to 5 team / family accounts</li>
           <li>Consolidated team reports</li>
-          <li>Priority email support</li>
+          <li>Category customization</li>
           <li>Early feature access</li>
-          <li>Dedicated onboarding call</li>
+          <li>Priority email support</li>
         </ul>
         <button class="lp-plan-btn lp-plan-btn-outline" onclick="hidePricingPage(event);document.querySelector('#lp-contact').scrollIntoView({behavior:'smooth'});">Contact for Team</button>
       </div>
@@ -1041,7 +465,7 @@
 ═══════════════════════════════════════ -->
 <div id="page-login" class="login-page hidden">
   <div class="login-card">
-    <h1 class="login-title">Expense Tracker</h1>
+    <h1 class="login-title">Fino</h1>
     <p class="login-sub">Sign in to continue</p>
     <div class="form-group">
       <label class="field-label">Username</label>
@@ -1061,7 +485,7 @@
 ═══════════════════════════════════════ -->
 <div id="page-signup" class="login-page hidden">
   <div class="login-card">
-    <h1 class="login-title">Expense Tracker</h1>
+    <h1 class="login-title">Fino</h1>
     <p class="login-sub">Create your account</p>
     <div class="form-group">
       <label class="field-label">Username</label>
@@ -1112,7 +536,7 @@
 
     <!-- Top Header -->
     <header class="top-header">
-      <h1 class="app-title">Expense Tracker</h1>
+      <h1 class="app-title">Fino</h1>
     </header>
 
     <!-- ── HOME PAGE ── -->
@@ -1275,6 +699,25 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 0 .5-4"/><polyline points="3 3 3 7 7 7"/></svg>
             History
           </button></li>
+          <li><button class="settings-nav-btn" data-tab="budgets">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Budgets
+          </button></li>
+          <li><button class="settings-nav-btn" data-tab="preferences">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Preferences
+          </button></li>
+
+          <li class="settings-nav-divider"></li>
+
+          <li><button class="settings-nav-btn" id="btn-go-community">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Community
+          </button></li>
+          <li><button class="settings-nav-btn upgrade-nav-btn" id="btn-go-pricing">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Upgrade Plan
+          </button></li>
           <li><button class="settings-nav-btn signout-btn" id="btn-signout">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Sign Out
@@ -1408,9 +851,19 @@
             <button class="btn-save-profile" id="btn-update-password">Update Password</button>
           </div>
 
-          <!-- Delete Account -->
+          <!-- Danger Zone -->
           <div class="card profile-card" style="border-color:rgba(239,68,68,0.2);background:rgba(239,68,68,0.03);">
             <h3 class="section-subtitle" style="color:var(--red);">Danger Zone</h3>
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding-bottom:16px;border-bottom:1px solid rgba(239,68,68,0.15);margin-bottom:16px;">
+              <div>
+                <p style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:4px;">Clear All Data</p>
+                <p style="font-size:13px;color:var(--text-muted);">Permanently delete every transaction. Your account and profile stay intact.</p>
+              </div>
+              <button class="btn-delete-inline" id="btn-clear-all-data">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                Clear All Data
+              </button>
+            </div>
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
               <div>
                 <p style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:4px;">Delete Account</p>
@@ -1426,7 +879,13 @@
 
         <!-- History Tab -->
         <div id="settings-history" class="settings-tab">
-          <h2 class="settings-content-title">Expense History</h2>
+          <div class="settings-title-row">
+            <h2 class="settings-content-title" style="margin:0;">Expense History</h2>
+            <button class="btn-export-csv" id="btn-export-csv">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Data (.csv)
+            </button>
+          </div>
           <div class="card profile-card">
             <table class="monthly-table" id="history-table">
               <thead>
@@ -1434,6 +893,44 @@
               </thead>
               <tbody id="history-tbody"></tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- Budgets Tab -->
+        <div id="settings-budgets" class="settings-tab">
+          <div class="settings-title-row">
+            <h2 class="settings-content-title" style="margin:0;">Budgets &amp; Subscriptions</h2>
+            <button class="btn-export-csv" id="btn-add-subscription" onclick="openSubscriptionModal()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Subscription
+            </button>
+          </div>
+          <p style="font-size:13.5px;color:var(--text-muted);margin:-6px 0 18px;max-width:560px;">
+            Set up recurring monthly payments — like Netflix or rent. Each month, the amount is added to your transactions automatically on the day you choose.
+          </p>
+          <div class="card profile-card" id="subscriptions-card">
+            <div id="subscriptions-list"></div>
+          </div>
+        </div>
+
+        <!-- Preferences Tab -->
+        <div id="settings-preferences" class="settings-tab">
+          <h2 class="settings-content-title">Preferences</h2>
+          <div class="card profile-card">
+            <h3 class="section-subtitle">Currency</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Choose the symbol used across the app. This changes how amounts are displayed; it doesn't convert existing values.</p>
+            <div class="form-group" style="max-width:320px;">
+              <label class="field-label-sm">Display currency</label>
+              <select class="field-input" id="pref-currency">
+                <option value="INR">₹  Indian Rupee (INR)</option>
+                <option value="USD">$  US Dollar (USD)</option>
+                <option value="EUR">€  Euro (EUR)</option>
+                <option value="GBP">£  British Pound (GBP)</option>
+                <option value="JPY">¥  Japanese Yen (JPY)</option>
+                <option value="AED">د.إ  UAE Dirham (AED)</option>
+              </select>
+            </div>
+            <button class="btn-save-profile" id="btn-save-prefs">Save Preferences</button>
           </div>
         </div>
       </div>
@@ -1450,6 +947,52 @@
     <div class="dialog-actions">
       <button class="btn-cancel-del" id="btn-cancel-del">Cancel</button>
       <button class="btn-confirm-del" id="btn-confirm-del">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Clear All Data confirm dialog -->
+<div class="modal-backdrop hidden" id="clear-data-modal">
+  <div class="delete-dialog">
+    <p>Clear all transactions?</p>
+    <p class="delete-sub">This permanently deletes every transaction. This cannot be undone.</p>
+    <div class="dialog-actions">
+      <button class="btn-cancel-del" id="btn-cancel-clear">Cancel</button>
+      <button class="btn-confirm-del" id="btn-confirm-clear">Clear Everything</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit Subscription modal -->
+<div class="modal-backdrop hidden" id="subscription-modal">
+  <div class="review-modal-dialog">
+    <div class="review-modal-header">
+      <h3 id="subscription-modal-title">Add Subscription</h3>
+      <button class="review-modal-close" id="btn-close-subscription-modal" onclick="closeSubscriptionModal()">×</button>
+    </div>
+    <div class="review-modal-form">
+      <div class="form-group">
+        <label class="field-label-sm">Name <span class="required">*</span></label>
+        <input type="text" class="field-input" id="sub-name" placeholder="e.g. Netflix" maxlength="60" />
+      </div>
+      <div class="profile-row two-col">
+        <div class="form-group">
+          <label class="field-label-sm">Amount <span class="required">*</span></label>
+          <input type="number" class="field-input" id="sub-amount" placeholder="199" min="1" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label class="field-label-sm">Day of month <span class="required">*</span></label>
+          <input type="number" class="field-input" id="sub-day" placeholder="1" min="1" max="28" value="1" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="field-label-sm">Category</label>
+        <select class="field-input" id="sub-category"></select>
+      </div>
+      <div class="dialog-actions" style="margin-top:8px;">
+        <button type="button" class="btn-cancel-del" id="btn-cancel-subscription" onclick="closeSubscriptionModal()">Cancel</button>
+        <button type="button" class="btn-confirm-del" id="btn-save-subscription" onclick="saveSubscription()">Save Subscription</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1565,815 +1108,5 @@
 <script src="config.js"></script>
 <script src="app.js"></script>
 
-<script>
-/* ══════════════════════════════════════════════════
-   LANDING PAGE NAVIGATION FUNCTIONS
-══════════════════════════════════════════════════ */
-
-function hideLanding() {
-  document.getElementById('page-landing').classList.add('hidden');
-  window.scrollTo(0, 0);
-}
-
-function goToLogin() {
-  document.getElementById('page-landing').classList.add('hidden');
-  document.getElementById('page-signup').classList.add('hidden');
-  document.getElementById('page-login').classList.remove('hidden');
-  document.getElementById('page-app').classList.add('hidden');
-  document.getElementById('page-faq').classList.add('hidden');
-  window.scrollTo(0, 0);
-}
-
-function goToSignup() {
-  document.getElementById('page-landing').classList.add('hidden');
-  document.getElementById('page-login').classList.add('hidden');
-  document.getElementById('page-signup').classList.remove('hidden');
-  document.getElementById('page-app').classList.add('hidden');
-  document.getElementById('page-faq').classList.add('hidden');
-  window.scrollTo(0, 0);
-}
-
-/* ── FAQ Page show/hide ── */
-function showFAQPage(e) {
-  if (e) e.preventDefault();
-  document.getElementById('page-landing').classList.add('hidden');
-  document.getElementById('page-faq').classList.remove('hidden');
-  document.getElementById('page-pricing')?.classList.add('hidden');
-  window.scrollTo(0, 0);
-  loadFAQFull();
-}
-
-function hideFAQPage(e) {
-  if (e) e.preventDefault();
-  document.getElementById('page-faq').classList.add('hidden');
-  document.getElementById('page-landing').classList.remove('hidden');
-  window.scrollTo(0, 0);
-}
-
-/* ── Pricing Page show/hide ── */
-function showPricingPage(e) {
-  if (e) e.preventDefault();
-  document.getElementById('page-landing').classList.add('hidden');
-  document.getElementById('page-pricing').classList.remove('hidden');
-  document.getElementById('page-faq')?.classList.add('hidden');
-  window.scrollTo(0, 0);
-}
-
-function hidePricingPage(e) {
-  if (e) e.preventDefault();
-  document.getElementById('page-pricing').classList.add('hidden');
-  document.getElementById('page-landing').classList.remove('hidden');
-  window.scrollTo(0, 0);
-}
-
-/* ── Member-since helper ── */
-function getMemberDuration(createdAt) {
-  if (!createdAt) return 'Member for —';
-  const created = new Date(createdAt);
-  const now = new Date();
-  const days = Math.floor((now - created) / (1000 * 60 * 60 * 24));
-  if (days < 1)  return 'Member since today';
-  if (days < 30) return `Member for ${days} day${days === 1 ? '' : 's'}`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `Member for ${months} month${months === 1 ? '' : 's'}`;
-  const years = Math.floor(months / 12);
-  return `Member for ${years} year${years === 1 ? '' : 's'}`;
-}
-
-/* ── Fill user info strip in modals ── */
-async function fillUserInfoStrip(avatarId, nameId, sinceId) {
-  if (!currentUser) return;
-  const username = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'user';
-  const createdAt = currentUser.created_at;
-
-  // Name + since
-  const nameEl  = document.getElementById(nameId);
-  const sinceEl = document.getElementById(sinceId);
-  if (nameEl)  nameEl.textContent  = '@' + username;
-  if (sinceEl) sinceEl.textContent = getMemberDuration(createdAt);
-
-  // Avatar: try DB pfp_url first, then localStorage
-  const avatarEl = document.getElementById(avatarId);
-  if (!avatarEl) return;
-  let pfpUrl = null;
-  if (!DEMO_MODE && db) {
-    const { data } = await db.from('profiles').select('pfp_url').eq('id', currentUser.id).single();
-    pfpUrl = data?.pfp_url || null;
-  }
-  if (!pfpUrl) pfpUrl = localStorage.getItem(`pfp_${currentUser.id}`) || null;
-  if (pfpUrl) {
-    avatarEl.style.backgroundImage = `url(${pfpUrl})`;
-    avatarEl.style.backgroundSize  = 'cover';
-    avatarEl.style.backgroundPosition = 'center';
-    avatarEl.textContent = '';
-  } else {
-    avatarEl.style.backgroundImage = '';
-    avatarEl.textContent = username.charAt(0).toUpperCase();
-  }
-}
-
-/* ══════════════════════════════════════════════════
-   LANDING PAGE BUTTON EVENT LISTENERS
-══════════════════════════════════════════════════ */
-
-document.addEventListener('DOMContentLoaded', function() {
-  // Launch App button in nav
-  const launchBtn = document.getElementById('lp-btn-launch');
-  if (launchBtn) {
-    launchBtn.setAttribute('data-action', 'login');
-    launchBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      if (launchBtn.getAttribute('data-action') === 'app') showApp();
-      else goToLogin();
-    });
-  }
-
-  // Get Started button in hero
-  const getStartedBtn = document.getElementById('lp-btn-getstarted');
-  if (getStartedBtn) {
-    getStartedBtn.addEventListener('click', function(e) { e.preventDefault(); goToSignup(); });
-  }
-
-  // Smooth scroll for anchor links
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function(e) {
-      const href = this.getAttribute('href');
-      if (href === '#' || !href.startsWith('#lp-')) return;
-      const target = document.querySelector(href);
-      if (target) {
-        e.preventDefault();
-        const navbarHeight = 80;
-        const targetPosition = target.getBoundingClientRect().top + window.pageYOffset - navbarHeight;
-        window.scrollTo({ top: targetPosition, behavior: 'smooth' });
-      }
-    });
-  });
-
-  // Contact form handler
-  const contactForm = document.getElementById('lp-form');
-  if (contactForm) {
-    contactForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      console.log('📧 Contact Form Submission');
-      const statusDiv = document.getElementById('lp-form-status');
-      if (statusDiv) statusDiv.innerHTML = '<p style="color:#34d399;font-size:14px;margin:12px 0;">✓ Message sent! We\'ll get back to you soon.</p>';
-      this.reset();
-      setTimeout(() => { if (statusDiv) statusDiv.innerHTML = ''; }, 5000);
-    });
-  }
-
-  /* ── Scroll Reveal ── */
-  const lpObserver = new IntersectionObserver(
-    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('lp-visible'); }),
-    { threshold: 0.12 }
-  );
-  document.querySelectorAll('.lp-reveal').forEach(el => lpObserver.observe(el));
-
-  /* ══════════════════════════════════════════════════
-     REVIEWS SYSTEM
-  ══════════════════════════════════════════════════ */
-  let selectedRating = 0;
-
-  function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
-  function getRandomColor() {
-    const colors = ['#4e7ab1', '#34d399', '#F59E0B', '#8B5CF6', '#EC4899', '#b987af'];
-    return colors[Math.floor(Math.random() * colors.length)];
-  }
-
-  async function loadReviews() {
-    const grid = document.getElementById('reviews-grid');
-    if (DEMO_MODE) {
-      grid.innerHTML = '<div class="lp-loading">Reviews will appear once Supabase is set up.</div>';
-      return;
-    }
-    try {
-      const { data, error } = await db.from('reviews').select('*').eq('approved', true)
-        .order('created_at', { ascending: false }).limit(8);
-      if (error) throw error;
-      if (!data || data.length === 0) {
-        grid.innerHTML = `<div class="lp-reviews-empty">
-          <div class="lp-reviews-empty-icon">✨</div>
-          <p class="lp-reviews-empty-title">No reviews yet</p>
-          <p class="lp-reviews-empty-sub">Be the first to share your experience!</p></div>`;
-        return;
-      }
-      const count = data.length;
-      grid.className = count === 1 ? 'lp-testi-grid lp-reviews-single'
-                     : count === 2 ? 'lp-testi-grid lp-reviews-pair'
-                     : 'lp-testi-grid';
-      grid.innerHTML = data.map(review => {
-        const uname  = review.username || 'user';
-        const letter = uname.charAt(0).toUpperCase();
-        const pfpStyle = review.pfp_url
-          ? `background-image:url(${review.pfp_url});background-size:cover;background-position:center;`
-          : `background:${getRandomColor()};`;
-        const sinceText = getMemberDuration(review.user_created_at || review.created_at);
-        return `<div class="lp-testi lp-reveal">
-          <div class="lp-stars">${'★'.repeat(review.rating)}${'☆'.repeat(5-review.rating)}</div>
-          <p class="lp-testi-q">"${escapeHtml(review.review_text)}"</p>
-          <div class="lp-testi-author">
-            <div class="lp-avatar" style="${pfpStyle}">${review.pfp_url ? '' : letter}</div>
-            <div>
-              <div class="lp-tname">@${escapeHtml(uname)}</div>
-              <div class="lp-trole">${sinceText}</div>
-            </div>
-          </div>
-        </div>`;
-      }).join('');
-      document.querySelectorAll('#reviews-grid .lp-reveal').forEach(el => lpObserver.observe(el));
-    } catch (err) {
-      console.error('Error loading reviews:', err);
-      grid.innerHTML = '<div class="lp-loading">Failed to load reviews.</div>';
-    }
-  }
-
-  // Open review modal
-  const btnAddReview = document.getElementById('btn-add-review');
-  const reviewModal  = document.getElementById('review-modal');
-
-  if (btnAddReview) {
-    btnAddReview.addEventListener('click', async () => {
-      if (DEMO_MODE) { showLandingToast('Reviews require a Supabase account. Please sign up!', 'info'); return; }
-      if (!currentUser && db) {
-        const { data: { session } } = await db.auth.getSession();
-        if (session) currentUser = session.user;
-      }
-      if (!currentUser) {
-        sessionStorage.setItem('returnTo', 'review');
-        goToLogin();
-        showLandingLoginHint();
-        return;
-      }
-      await fillUserInfoStrip('review-user-avatar', 'review-user-name', 'review-user-since');
-      reviewModal.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-    });
-  }
-
-  function closeReviewModal() {
-    reviewModal.classList.add('hidden');
-    document.body.style.overflow = '';
-    document.getElementById('review-form').reset();
-    selectedRating = 0;
-    document.querySelectorAll('.star-btn').forEach(btn => btn.classList.remove('active'));
-  }
-
-  document.getElementById('btn-close-review-modal')?.addEventListener('click', closeReviewModal);
-  document.getElementById('btn-cancel-review')?.addEventListener('click', closeReviewModal);
-
-  // Star rating
-  document.querySelectorAll('.star-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      selectedRating = parseInt(this.dataset.rating);
-      document.getElementById('review-rating').value = selectedRating;
-      document.querySelectorAll('.star-btn').forEach(s => {
-        s.classList.toggle('active', parseInt(s.dataset.rating) <= selectedRating);
-      });
-    });
-  });
-
-  // Counter
-  const reviewText = document.getElementById('review-text');
-  const reviewCounter = document.getElementById('review-counter');
-  if (reviewText) reviewText.addEventListener('input', () => {
-    reviewCounter.textContent = `${reviewText.value.length}/500`;
-  });
-
-  // Submit review — uses username + pfp_url from profiles
-  document.getElementById('review-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!selectedRating) { showLandingToast('Please select a rating', 'error'); return; }
-    const reviewTextValue = document.getElementById('review-text').value.trim();
-    const btnSubmit = document.getElementById('btn-submit-review');
-    btnSubmit.disabled = true; btnSubmit.textContent = 'Submitting...';
-    try {
-      // Fetch latest profile for username + pfp_url
-      const { data: prof } = await db.from('profiles').select('username, pfp_url').eq('id', currentUser.id).single();
-      const username = prof?.username || currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'user';
-      const pfpUrl   = prof?.pfp_url || localStorage.getItem(`pfp_${currentUser.id}`) || null;
-      
-      // Try to insert with new schema first
-      let { error } = await db.from('reviews').insert({
-        user_id:          currentUser.id,
-        username,
-        pfp_url:          pfpUrl,
-        user_created_at:  currentUser.created_at,
-        rating:           selectedRating,
-        review_text:      reviewTextValue,
-        approved:         false
-      });
-      
-      // If failed, try old schema (name, role instead of username, pfp_url)
-      if (error && error.message.includes('column')) {
-        console.log('Trying old schema...');
-        const result = await db.from('reviews').insert({
-          user_id:     currentUser.id,
-          name:        username,
-          role:        'Member',
-          rating:      selectedRating,
-          review_text: reviewTextValue,
-          approved:    false
-        });
-        error = result.error;
-      }
-      
-      if (error) {
-        console.error('Supabase error details:', error);
-        if (error.message.includes('relation') && error.message.includes('does not exist')) {
-          showLandingToast('Reviews table not found. Please run reviews_setup.sql in Supabase.', 'error');
-        } else if (error.message.includes('violates check constraint')) {
-          showLandingToast('Review must be 10-500 characters.', 'error');
-        } else {
-          showLandingToast('Error: ' + error.message, 'error');
-        }
-        throw error;
-      }
-      showLandingToast('Thank you! Your review will appear after approval.', 'success');
-      closeReviewModal();
-      // Reset form
-      selectedRating = 0;
-      document.getElementById('review-text').value = '';
-      document.querySelectorAll('.star-btn').forEach(s => s.classList.remove('active'));
-    } catch (err) {
-      console.error('Error submitting review:', err);
-      // Error already handled above
-    } finally {
-      btnSubmit.disabled = false; btnSubmit.textContent = 'Submit Review';
-    }
-  });
-
-  loadReviews();
-
-  /* ══════════════════════════════════════════════════
-     FAQ SYSTEM
-  ══════════════════════════════════════════════════ */
-  let allFAQs = [];
-  let answeringFAQId = null;
-
-  // Load preview FAQs (latest 4) on landing page
-  async function loadFAQPreview() {
-    const container = document.getElementById('faq-preview-grid');
-    if (!container) return;
-    if (DEMO_MODE) {
-      container.innerHTML = '<div class="lp-loading">FAQ preview requires Supabase.</div>';
-      return;
-    }
-    try {
-      const { data, error } = await db.from('faqs')
-        .select('*, faq_answers(id), faq_likes(id)')
-        .eq('is_published', true)
-        .order('created_at', { ascending: false })
-        .limit(9);
-      if (error) throw error;
-      if (!data || data.length === 0) {
-        container.innerHTML = '<div class="lp-loading" style="color: rgba(200,216,238,0.4); font-size: 13px;">No questions yet</div>';
-        return;
-      }
-      // Sort by like count (most liked first)
-      data.sort((a, b) => (b.faq_likes?.length || 0) - (a.faq_likes?.length || 0));
-
-      // Get user's liked FAQ ids
-      let likedIds = new Set();
-      if (currentUser) {
-        const { data: liked } = await db.from('faq_likes').select('faq_id').eq('user_id', currentUser.id);
-        if (liked) liked.forEach(l => likedIds.add(l.faq_id));
-      }
-
-      container.innerHTML = data.map(faq =>
-        renderFAQCard(faq, faq.faq_answers?.length || 0, false, faq.faq_likes?.length || 0, likedIds.has(faq.id))
-      ).join('');
-    } catch(err) {
-      console.error('FAQ preview error:', err);
-      container.innerHTML = '<div class="lp-loading">Failed to load FAQs.</div>';
-    }
-  }
-  
-  // Load FAQ preview on page load
-  loadFAQPreview();
-
-  // Load ALL FAQs (for full page)
-  window.loadFAQFull = async function() {
-    const container = document.getElementById('faq-full-list');
-    if (!container) return;
-    if (DEMO_MODE) {
-      container.innerHTML = '<div class="faq-no-results">FAQ requires Supabase.</div>';
-      return;
-    }
-    try {
-      container.innerHTML = '<div class="lp-reviews-empty"><div class="lp-reviews-empty-icon">⏳</div><p>Loading...</p></div>';
-      const { data, error } = await db.from('faqs')
-        .select('*, faq_answers(*), faq_likes(id, user_id)')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      allFAQs = data || [];
-      // Sort by likes
-      allFAQs.sort((a, b) => (b.faq_likes?.length || 0) - (a.faq_likes?.length || 0));
-
-      // Get user's liked ids
-      if (currentUser) {
-        const { data: liked } = await db.from('faq_likes').select('faq_id').eq('user_id', currentUser.id);
-        window._faqLikedIds = new Set(liked ? liked.map(l => l.faq_id) : []);
-      } else {
-        window._faqLikedIds = new Set();
-      }
-      renderFullFAQ(allFAQs);
-    } catch(err) {
-      console.error('FAQ full load error:', err);
-      container.innerHTML = '<div class="faq-no-results">Failed to load FAQs.</div>';
-    }
-  };
-
-  function renderFullFAQ(faqs) {
-    const container = document.getElementById('faq-full-list');
-    if (!container) return;
-    if (!faqs || faqs.length === 0) {
-      container.innerHTML = '<div class="faq-no-results">No questions found.</div>';
-      return;
-    }
-    const likedIds = window._faqLikedIds || new Set();
-    container.innerHTML = faqs.map(faq =>
-      renderFAQCard(faq, (faq.faq_answers||[]).length, true, faq.faq_likes?.length || 0, likedIds.has(faq.id))
-    ).join('');
-  }
-
-  function renderFAQCard(faq, answerCount, showAnswers, likeCount = 0, userLiked = false) {
-    const answers = showAnswers && faq.faq_answers ? faq.faq_answers : [];
-    const since = getMemberDuration(faq.user_created_at || faq.created_at);
-    const initial = (faq.username || 'U').charAt(0).toUpperCase();
-    const likedClass = userLiked ? ' liked' : '';
-    const heartSvg = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
-
-    const answersHtml = answers.length > 0 ? `<div class="faq-card-answers">${answers.map(a => {
-      const al = a.username || 'user';
-      return `<div class="faq-answer">
-        <div class="faq-answer-text">${escapeHtml(a.answer_text)}</div>
-        <div class="faq-answer-meta">— @${escapeHtml(al)} · ${getMemberDuration(a.user_created_at||a.created_at)}</div>
-      </div>`;
-    }).join('')}</div>` : '';
-
-    const hotBadge = (likeCount > 0 && !showAnswers)
-      ? `<span style="position:absolute;top:14px;right:14px;background:rgba(244,63,94,0.15);border:1px solid rgba(244,63,94,0.3);color:#f43f5e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:0.05em;">🔥 TOP</span>`
-      : '';
-
-    return `<div class="faq-card" data-faq-id="${faq.id}">
-      ${hotBadge}
-      <div class="faq-card-user">
-        <div class="faq-card-avatar">${initial}</div>
-        <div>
-          <div class="faq-card-username">@${escapeHtml(faq.username||'user')}</div>
-          <div class="faq-card-since">${since}</div>
-        </div>
-      </div>
-      <div class="faq-card-q">${escapeHtml(faq.question_text)}</div>
-      <div class="faq-card-meta">@${escapeHtml(faq.username||'user')} · ${since}</div>
-      ${answersHtml}
-      <div class="faq-card-footer">
-        <span class="faq-answer-count">${answerCount} answer${answerCount===1?'':'s'}</span>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <button class="btn-faq-like${likedClass}" onclick="toggleFAQLike(this, '${faq.id}')" title="${userLiked?'Unlike':'Like'} this question">
-            ${heartSvg}
-            <span class="like-count">${likeCount}</span>
-          </button>
-          <button class="btn-faq-answer" onclick="openAnswerModal('${faq.id}', \`${escapeHtml(faq.question_text).replace(/`/g,"'")}\`)">Answer</button>
-        </div>
-      </div>
-    </div>`;
-  }
-
-  // Filter FAQ by search
-  window.filterFAQ = function(query) {
-    const q = query.toLowerCase();
-    const filtered = q ? allFAQs.filter(f =>
-      f.question_text.toLowerCase().includes(q) ||
-      (f.faq_answers||[]).some(a => a.answer_text.toLowerCase().includes(q))
-    ) : allFAQs;
-    renderFullFAQ(filtered);
-  };
-
-  // Toggle like on an FAQ
-  window.toggleFAQLike = async function(btn, faqId) {
-    if (DEMO_MODE) { showLandingToast('Likes require a Supabase account.', 'info'); return; }
-    if (!currentUser && db) {
-      const { data: { session } } = await db.auth.getSession();
-      if (session) currentUser = session.user;
-    }
-    if (!currentUser) {
-      sessionStorage.setItem('returnTo', 'faq');
-      goToLogin();
-      showLandingLoginHint();
-      return;
-    }
-
-    const isLiked = btn.classList.contains('liked');
-    const countEl = btn.querySelector('.like-count');
-    let count = parseInt(countEl.textContent, 10) || 0;
-
-    // Optimistic UI
-    btn.classList.toggle('liked');
-    countEl.textContent = isLiked ? count - 1 : count + 1;
-    btn.title = isLiked ? 'Like this question' : 'Unlike this question';
-
-    try {
-      if (isLiked) {
-        const { error } = await db.from('faq_likes').delete()
-          .eq('faq_id', faqId).eq('user_id', currentUser.id);
-        if (error) throw error;
-        if (window._faqLikedIds) window._faqLikedIds.delete(faqId);
-      } else {
-        const { error } = await db.from('faq_likes').insert({ faq_id: faqId, user_id: currentUser.id });
-        if (error) throw error;
-        if (window._faqLikedIds) window._faqLikedIds.add(faqId);
-      }
-    } catch(err) {
-      // Revert on failure
-      btn.classList.toggle('liked');
-      countEl.textContent = count;
-      btn.title = isLiked ? 'Unlike this question' : 'Like this question';
-      console.error('Like error:', err);
-      showLandingToast('Could not update like. Please try again.', 'error');
-    }
-  };
-
-  // Ask question modal
-  async function openAskModal() {
-    if (DEMO_MODE) { showLandingToast('FAQ requires a Supabase account.', 'info'); return; }
-    if (!currentUser && db) {
-      const { data: { session } } = await db.auth.getSession();
-      if (session) currentUser = session.user;
-    }
-    if (!currentUser) {
-      sessionStorage.setItem('returnTo', 'faq');
-      goToLogin();
-      showLandingLoginHint();
-      return;
-    }
-    await fillUserInfoStrip('faq-user-avatar', 'faq-user-name', 'faq-user-since');
-    document.getElementById('faq-ask-modal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeAskModal() {
-    document.getElementById('faq-ask-modal').classList.add('hidden');
-    document.body.style.overflow = '';
-    document.getElementById('faq-question-text').value = '';
-    document.getElementById('faq-q-counter').textContent = '0/400';
-  }
-
-  document.getElementById('btn-ask-question')?.addEventListener('click', openAskModal);
-  document.getElementById('btn-ask-question-full')?.addEventListener('click', openAskModal);
-  document.getElementById('btn-close-faq-modal')?.addEventListener('click', closeAskModal);
-  document.getElementById('btn-cancel-faq')?.addEventListener('click', closeAskModal);
-
-  const faqQText = document.getElementById('faq-question-text');
-  if (faqQText) faqQText.addEventListener('input', () => {
-    document.getElementById('faq-q-counter').textContent = `${faqQText.value.length}/400`;
-  });
-
-  document.getElementById('btn-submit-faq')?.addEventListener('click', async () => {
-    const text = document.getElementById('faq-question-text').value.trim();
-    if (!text || text.length < 10) { showLandingToast('Please write at least 10 characters', 'error'); return; }
-    const btn = document.getElementById('btn-submit-faq');
-    btn.disabled = true; btn.textContent = 'Posting...';
-    try {
-      const { data: prof } = await db.from('profiles').select('username, pfp_url').eq('id', currentUser.id).single();
-      const username = prof?.username || currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'user';
-      const { error } = await db.from('faqs').insert({
-        user_id: currentUser.id, 
-        username,
-        user_created_at: currentUser.created_at,
-        question_text: text,
-        is_published: true
-      });
-      if (error) {
-        console.error('FAQ insert error:', error);
-        if (error.message.includes('relation') && error.message.includes('does not exist')) {
-          showLandingToast('FAQs table not found. Please run faq_setup.sql in Supabase.', 'error');
-        } else if (error.message.includes('violates check constraint')) {
-          showLandingToast('Question must be 10-400 characters.', 'error');
-        } else {
-          showLandingToast('Error: ' + error.message, 'error');
-        }
-        throw error;
-      }
-      showLandingToast('Question posted!', 'success');
-      closeAskModal();
-      document.getElementById('faq-question-text').value = '';
-      document.getElementById('faq-q-counter').textContent = '0/400';
-      loadFAQPreview();
-      if (!document.getElementById('page-faq').classList.contains('hidden')) loadFAQFull();
-    } catch(err) {
-      console.error('FAQ post error:', err);
-      // Error already handled above
-    } finally {
-      btn.disabled = false; btn.textContent = 'Post Question';
-    }
-  });
-
-  // Answer modal
-  window.openAnswerModal = async function(faqId, questionText) {
-    if (DEMO_MODE) { showLandingToast('FAQ requires a Supabase account.', 'info'); return; }
-    if (!currentUser && db) {
-      const { data: { session } } = await db.auth.getSession();
-      if (session) currentUser = session.user;
-    }
-    if (!currentUser) {
-      sessionStorage.setItem('returnTo', 'faq');
-      goToLogin();
-      showLandingLoginHint();
-      return;
-    }
-    answeringFAQId = faqId;
-    document.getElementById('faq-question-preview').textContent = questionText;
-    await fillUserInfoStrip('faq-answer-user-avatar', 'faq-answer-user-name', null);
-    document.getElementById('faq-answer-modal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-  };
-
-  function closeAnswerModal() {
-    document.getElementById('faq-answer-modal').classList.add('hidden');
-    document.body.style.overflow = '';
-    document.getElementById('faq-answer-text').value = '';
-    document.getElementById('faq-a-counter').textContent = '0/600';
-    answeringFAQId = null;
-  }
-
-  document.getElementById('btn-close-answer-modal')?.addEventListener('click', closeAnswerModal);
-  document.getElementById('btn-cancel-answer')?.addEventListener('click', closeAnswerModal);
-
-  const faqAText = document.getElementById('faq-answer-text');
-  if (faqAText) faqAText.addEventListener('input', () => {
-    document.getElementById('faq-a-counter').textContent = `${faqAText.value.length}/600`;
-  });
-
-  document.getElementById('btn-submit-answer')?.addEventListener('click', async () => {
-    const text = document.getElementById('faq-answer-text').value.trim();
-    if (!text || text.length < 5) { showLandingToast('Please write at least 5 characters', 'error'); return; }
-    const btn = document.getElementById('btn-submit-answer');
-    btn.disabled = true; btn.textContent = 'Posting...';
-    try {
-      const { data: prof } = await db.from('profiles').select('username').eq('id', currentUser.id).single();
-      const username = prof?.username || currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'user';
-      const { error } = await db.from('faq_answers').insert({
-        faq_id: answeringFAQId, user_id: currentUser.id, username,
-        user_created_at: currentUser.created_at,
-        answer_text: text
-      });
-      if (error) throw error;
-      showLandingToast('Answer posted!', 'success');
-      closeAnswerModal();
-      if (!document.getElementById('page-faq').classList.contains('hidden')) loadFAQFull();
-      else loadFAQPreview();
-    } catch(err) {
-      console.error('FAQ answer error:', err);
-      showLandingToast('Failed to post answer.', 'error');
-    } finally {
-      btn.disabled = false; btn.textContent = 'Post Answer';
-    }
-  });
-
-  loadFAQPreview();
-
-  /* ══════════════════════════════════════════════════
-     SESSION CHECK + USER NAV
-  ══════════════════════════════════════════════════ */
-  async function checkLandingSession() {
-    if (DEMO_MODE || !db) return;
-    try {
-      const { data: { session } } = await db.auth.getSession();
-      if (session) { currentUser = session.user; activateLandingUserNav(session.user); }
-    } catch (e) { /* silent */ }
-  }
-  checkLandingSession();
-
-  function activateLandingUserNav(user) {
-    const launchBtn = document.getElementById('lp-btn-launch');
-    const userNav   = document.getElementById('lp-user-nav');
-    if (launchBtn) launchBtn.classList.add('hidden');
-    if (userNav)   userNav.classList.remove('hidden');
-
-    // PFP: try DB first, then localStorage
-    const avatar = document.getElementById('lp-pfp-avatar');
-    if (avatar) {
-      const username = user.user_metadata?.username || user.email || '';
-      // Async: load pfp from DB
-      (async () => {
-        let pfpUrl = null;
-        if (!DEMO_MODE && db) {
-          const { data } = await db.from('profiles').select('pfp_url').eq('id', user.id).single();
-          pfpUrl = data?.pfp_url || null;
-        }
-        if (!pfpUrl) pfpUrl = localStorage.getItem(`pfp_${user.id}`) || null;
-        if (pfpUrl) {
-          avatar.style.backgroundImage = `url(${pfpUrl})`;
-          avatar.style.backgroundSize  = 'cover';
-          avatar.style.backgroundPosition = 'center';
-          avatar.textContent = '';
-        } else {
-          avatar.textContent = username.charAt(0).toUpperCase() || 'A';
-        }
-      })();
-    }
-
-    const dashBtn = document.getElementById('lp-btn-dashboard');
-    if (dashBtn) dashBtn.addEventListener('click', () => showApp());
-
-    const pfpWrap     = document.getElementById('lp-pfp-wrap');
-    const pfpDropdown = document.getElementById('lp-pfp-dropdown');
-    if (pfpWrap && pfpDropdown) {
-      pfpWrap.addEventListener('click', (e) => { e.stopPropagation(); pfpDropdown.classList.toggle('hidden'); });
-      document.addEventListener('click', () => pfpDropdown.classList.add('hidden'));
-    }
-
-    const accountBtn = document.getElementById('lp-pfp-account');
-    if (accountBtn) {
-      accountBtn.addEventListener('click', async () => {
-        pfpDropdown.classList.add('hidden');
-        await showApp();
-        setTimeout(() => {
-          if (typeof navigateTo === 'function') navigateTo('settings');
-          if (typeof openSettingsTab === 'function') openSettingsTab('account');
-        }, 300);
-      });
-    }
-
-    const signoutBtn = document.getElementById('lp-pfp-signout');
-    if (signoutBtn) {
-      signoutBtn.addEventListener('click', async () => {
-        pfpDropdown.classList.add('hidden');
-        if (db) await db.auth.signOut();
-        currentUser = null;
-        if (launchBtn) launchBtn.classList.remove('hidden');
-        if (userNav)   userNav.classList.add('hidden');
-        showLandingToast('Signed out successfully', 'success');
-      });
-    }
-  }
-
-  // Handle return intent
-  function handleReturnIntent() {
-    const returnTo = sessionStorage.getItem('returnTo');
-    if (!returnTo) return;
-    sessionStorage.removeItem('returnTo');
-    if (currentUser) {
-      document.getElementById('page-landing').classList.remove('hidden');
-      document.getElementById('page-login').classList.add('hidden');
-      document.getElementById('page-signup').classList.add('hidden');
-      document.getElementById('page-app').classList.add('hidden');
-      if (returnTo === 'review') {
-        setTimeout(() => {
-          const section = document.getElementById('lp-testimonials');
-          if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          setTimeout(async () => {
-            const modal = document.getElementById('review-modal');
-            if (modal) {
-              await fillUserInfoStrip('review-user-avatar','review-user-name','review-user-since');
-              modal.classList.remove('hidden');
-              document.body.style.overflow = 'hidden';
-            }
-          }, 600);
-        }, 100);
-      } else if (returnTo === 'faq') {
-        showFAQPage(null);
-      }
-    }
-  }
-
-  window._handleReturnIntent = handleReturnIntent;
-});
-
-/* ─── Landing page toast ─── */
-function showLandingToast(msg, type) {
-  let container = document.getElementById('landing-toasts');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'landing-toasts';
-    container.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;';
-    document.body.appendChild(container);
-  }
-  const el = document.createElement('div');
-  const bg = type === 'info' ? '#4e7ab1' : type === 'error' ? '#ef4444' : '#34d399';
-  el.style.cssText = `background:${bg};color:#fff;padding:12px 22px;border-radius:10px;font-size:14px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.3);pointer-events:auto;`;
-  el.textContent = msg;
-  container.appendChild(el);
-  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity 0.3s'; setTimeout(()=>el.remove(),350); }, 3500);
-}
-
-function showLandingLoginHint() {
-  setTimeout(() => {
-    const card = document.querySelector('#page-login .login-card');
-    if (!card || document.getElementById('review-login-hint')) return;
-    const hint = document.createElement('p');
-    hint.id = 'review-login-hint';
-    hint.style.cssText = 'text-align:center;font-size:13px;color:#d6a7c2;margin-top:12px;';
-    hint.textContent = '✍️ Sign in to continue — you\'ll be taken straight back.';
-    card.appendChild(hint);
-  }, 100);
-}
-</script>
 </body>
 </html>
