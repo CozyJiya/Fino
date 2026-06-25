@@ -3440,7 +3440,7 @@ async function fillUserInfoStrip(avatarId, nameId, sinceId) {
   // Name + since
   const nameEl  = document.getElementById(nameId);
   const sinceEl = document.getElementById(sinceId);
-  if (nameEl)  nameEl.textContent  = '@' + username;
+  if (nameEl)  nameEl.textContent  = username;
   if (sinceEl) sinceEl.textContent = getMemberDuration(createdAt);
 
   // Avatar: try DB pfp_url first, then localStorage
