@@ -4328,27 +4328,24 @@ function showLandingLoginHint() {
       c.addEventListener('mousemove',function(e){var r=c.getBoundingClientRect();c.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');c.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%');});
     });
 
-    /* contact form → save to Supabase (triggers email via Edge Function) */
+    /* contact form → Formspree */
     var form=document.getElementById('contactForm'),ok=document.getElementById('okMsg');
     if(form){form.addEventListener('submit',async function(e){
       e.preventDefault();
       var btn=form.querySelector('button[type="submit"]');
       var orig=btn?btn.textContent:'';
       if(btn){btn.disabled=true;btn.textContent='Sending…';}
-      var fd=new FormData(form);
-      var payload={
-        name:(fd.get('name')||'').toString().trim(),
-        email:(fd.get('email')||'').toString().trim(),
-        subject:(fd.get('subject')||'').toString().trim(),
-        message:(fd.get('message')||'').toString().trim()
-      };
       try{
-        if(typeof DEMO_MODE!=='undefined'&&DEMO_MODE){throw new Error('demo');}
-        var res=await db.from('contact_messages').insert(payload);
-        if(res.error)throw res.error;
+        var res=await fetch('https://formspree.io/f/xjgqogvl',{
+          method:'POST',
+          body:new FormData(form),
+          headers:{'Accept':'application/json'}
+        });
+        if(!res.ok)throw new Error('server error');
         form.reset();
         ok.textContent='✓ Message sent! We\'ll get back to you soon.';
         ok.classList.add('show');
+        ok.style.color='';
         setTimeout(function(){ok.classList.remove('show');},5000);
       }catch(err){
         console.error('Contact form error:',err);
